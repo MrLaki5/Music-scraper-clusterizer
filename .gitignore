@@ -1,0 +1,12 @@
+# OSX file system stuff
+.DS_Store
+
+#Visual studio code stuff
+.vs
+
+#pyCharm stuff
+.idea/
+
+venv/
+
+venv_36/

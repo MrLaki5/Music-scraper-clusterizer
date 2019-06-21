@@ -41,13 +41,13 @@ album = Table('album', metadata,
               Column('style', String(50), nullable=False),
               Column('style', String(5), nullable=False),
               Column('country', String(50), nullable=False),
-              Column('format', String(100), nullable=True),
-              Column('site_id', String(50), nullable=False))
+              Column('format', String(100), nullable=True))
 
 album_name = Table('album_name', metadata,
                    Column('id', Integer, primary_key=True, autoincrement=True),
                    Column('id_album', ForeignKey('album.id'), nullable=False),
-                   Column('name', String(200), nullable=False))
+                   Column('name', String(200), nullable=False),
+                   Column('site_id', String(50), nullable=False))
 
 song = Table('song', metadata,
              Column('id', Integer, primary_key=True, autoincrement=True),

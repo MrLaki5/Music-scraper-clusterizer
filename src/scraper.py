@@ -11,7 +11,8 @@ if __name__ == '__main__':
 
 REQUEST_STATUS_OK = 200
 
-BASE_URL = "https://www.discogs.com/search/"
+BASE_URL = "https://www.discogs.com"
+BASE_URL_SEARCH = "https://www.discogs.com/search/"
 FAST_LAYOUT_ATTR = "layout=sm"
 GENRE_ATTR = "genre_exact="
 DECADE_ATTR = "decade="
@@ -22,7 +23,7 @@ LIMIT_MAX_ATTR = "limit=250"
 
 # Gets all data for one country, iterating through decades and genre
 def scrape_country(country):
-    url = BASE_URL + "?" + COUNTRY_ATTR + country + "&" + FAST_LAYOUT_ATTR
+    url = BASE_URL_SEARCH + "?" + COUNTRY_ATTR + country + "&" + FAST_LAYOUT_ATTR
     response = requests.get(url)
     if response.status_code == REQUEST_STATUS_OK:
         # Create html_tree of all page
@@ -44,7 +45,7 @@ def scrape_country(country):
 
 # Gets all data for one country, for one specific decade
 def scrape_country_decade(country, decade):
-    url = BASE_URL + "?" + COUNTRY_ATTR + country + "&" + DECADE_ATTR + decade + "&" + FAST_LAYOUT_ATTR
+    url = BASE_URL_SEARCH + "?" + COUNTRY_ATTR + country + "&" + DECADE_ATTR + decade + "&" + FAST_LAYOUT_ATTR
     response = requests.get(url)
     if response.status_code == REQUEST_STATUS_OK:
         # Create html_tree of all page
@@ -80,7 +81,7 @@ def scrape_country_decade_genre(country, decade, genre=None):
     while work_flag:
         page_num += 1
         # Build url
-        url = (BASE_URL + "?" + COUNTRY_ATTR + country + "&" + DECADE_ATTR + decade + "&" +
+        url = (BASE_URL_SEARCH + "?" + COUNTRY_ATTR + country + "&" + DECADE_ATTR + decade + "&" +
                FAST_LAYOUT_ATTR + "&" + PAGE_NUM_ATTR + str(page_num) + "&" + LIMIT_MAX_ATTR)
         if genre:
             url += "&" + GENRE_ATTR + genre
@@ -111,5 +112,8 @@ def scrape_country_decade_genre(country, decade, genre=None):
                           str(response.status_code) + ", on url: " + url)
             work_flag = False
 
+
+def scrape_album():
+    pass
 
 scrape_country("Yugoslavia")

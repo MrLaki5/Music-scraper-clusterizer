@@ -39,7 +39,6 @@ album = Table('album', metadata,
               Column('rating', Numeric(20, 5), nullable=True),
               Column('genre', String(50), nullable=False),
               Column('style', String(50), nullable=False),
-              Column('style', String(5), nullable=False),
               Column('country', String(50), nullable=False),
               Column('format', String(100), nullable=True))
 

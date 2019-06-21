@@ -106,6 +106,8 @@ def scrape_country_decade_genre(country, decade, genre=None):
                 albums.append(item['href'])
             logging.debug("scraper:scrape_country_decade_genre: albums found: country: " + country + ", decade: "
                           + decade + ", albums: " + str(albums))
+            for item in albums:
+                scrape_album(BASE_URL + item)
         else:
             # If flag is out of bound it means it has finished all pages for current filters
             logging.debug("scraper:scrape_country_decade_genre: finishing scrape response status: " +
@@ -113,7 +115,87 @@ def scrape_country_decade_genre(country, decade, genre=None):
             work_flag = False
 
 
-def scrape_album():
-    pass
+def scrape_album(url, country, decade):
+    response = requests.get(url)
+    if response.status_code == REQUEST_STATUS_OK:
+        # Create html_tree of all page
+        html_tree = BeautifulSoup(response.text, "html.parser")
+        # Get album id
+        album_site_id = response.url.split("/")
+        album_site_id = album_site_id[len(album_site_id) - 1]
 
-scrape_country("Yugoslavia")
+        # Get title header of album
+        title_tree = html_tree.find("h1", {"id": "profile_title"})
+        # Get artist of album
+        album_artist_tree = title_tree.find('a', href=re.compile("artist"))
+        album_artist_url = album_artist_tree['href']
+        # Get title of album
+        album_title_tree = title_tree.find_all("span")
+        album_title = album_title_tree[2].text
+        album_title = album_title.strip()
+        # Get album styles
+        style_tree = html_tree.find_all('a', href=re.compile("/style/"))
+        styles = []
+        for item in style_tree:
+            styles.append(item.string)
+        # Get album genres
+        genre_tree = html_tree.find_all('a', href=re.compile("/genre/"))
+        genres = []
+        for item in genre_tree:
+            genres.append(item.string)
+        # Get album formats
+        format_tree = html_tree.find_all('a', href=re.compile("format_exact"))
+        formats = []
+        for item in format_tree:
+            formats.append(item.string)
+            other_elems = item.next_sibling.strip().split(",")
+            for item_2 in other_elems:
+                if item_2 != '':
+                    formats.append(item_2.strip())
+        # Get album rating
+        rating_tree = html_tree.find("span", {"class": "rating_value"})
+        rating = None
+        try:
+            rating = float(rating_tree.string)
+        except:
+            pass
+
+        logging.debug("Album info[album_site_id: " + str(album_site_id) + ", artist_url: " + album_artist_url +
+                      ", album_title: " + album_title + ", genres: " + str(genres) + ", styles: " + str(styles)
+                      + ", rating: " + str(rating) + ", country: " + country + ", decade: " + decade + ", formats: "
+                      + str(formats) + "]")
+
+        # Get songs of album
+        songs = []
+        songs_tree = html_tree.find('div', {"id": "tracklist"})
+        if songs_tree:
+            songs_tree = songs_tree.find_all('a', href=re.compile("track"))
+            for item in songs_tree:
+                song_name = item.find('span', {"class": "tracklist_track_title"}).string
+                song_url = item['href']
+                songs.append({"name": song_name, "url": song_url})
+
+        logging.debug("Album songs: " + str(songs))
+
+        # Get versions of same album
+        versions = []
+        versions_tree = html_tree.find('table', {"id": "versions"})
+        if versions_tree:
+            versions_tree = versions_tree.find_all('td', {"class": "title"})
+            for item in versions_tree:
+                item = item.find('a', href=True)
+                version = item.string
+                version_url = item['href']
+                versions.append({"name": version, "url": version_url})
+
+        logging.debug("Album versions: " + str(versions))
+
+    else:
+        logging.debug("scraper:scrape_album: finishing scrape response status: " +
+                      str(response.status_code) + ", on url: " + url)
+
+
+# scrape_country("Yugoslavia")
+scrape_album(
+    'https://www.discogs.com/Riblja-%C4%8Corba-Ve%C4%8Deras-Vas-Zabavljaju-Muzi%C4%8Dari-Koji-Piju/master/248758',
+    'Yugoslavia', "1980")

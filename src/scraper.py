@@ -263,7 +263,7 @@ def scrape_artist(url):
         # Return if there is no name and log it
         if not artist_name:
             logging.error("scraper:scrape_artist: artist does not have name, on url: " + url)
-            return
+            return False
 
         # Find vocals num
         vocals_num = None
@@ -288,8 +288,11 @@ def scrape_artist(url):
 
         logging.debug("Artist info[name: " + artist_name + " , is_group: " + str(is_group) + " , id: "
                       + artist_site_id + " , vocal num: " + vocals_num + " , sites: " + str(sites) + "]")
+
+        return True
     else:
         logging.error("scraper:scrape_artist: response status: " + str(response.status_code) + ", on url: " + url)
+        return False
 
 
 # scrape_country("Yugoslavia")

@@ -123,12 +123,18 @@ def scrape_album(url, country, decade):
         # Get album id
         album_site_id = response.url.split("/")
         album_site_id = album_site_id[len(album_site_id) - 1]
-
+        # Create artist id rate set
+        artist_rate_set = set()
         # Get title header of album
         title_tree = html_tree.find("h1", {"id": "profile_title"})
         # Get artist of album
         album_artist_tree = title_tree.find('a', href=re.compile("artist"))
         album_artist_url = album_artist_tree['href']
+        album_artist_id = album_artist_url.split("/")
+        album_artist_id = album_artist_id[len(album_artist_id) - 1]
+        album_artist_id = album_artist_id.split("-")
+        album_artist_id = album_artist_id[0]
+        artist_rate_set.add(album_artist_id)
         # Get title of album
         album_title_tree = title_tree.find_all("span")
         album_title = album_title_tree[2].text
@@ -199,6 +205,7 @@ def scrape_album(url, country, decade):
                     artist_id = artist_url.split("/")
                     artist_id = artist_id[len(artist_id) - 1].split("-")
                     artist_id = artist_id[0]
+                    artist_rate_set.add(artist_id)
                     # Get artists doing in song
                     artists_item = item_2.next
                     artist_parts = []
@@ -236,6 +243,35 @@ def scrape_album(url, country, decade):
 
         logging.debug("Album versions: " + str(versions))
 
+        # Get artists from other credits
+        credits_tree = html_tree.find('div', {'id': 'credits'})
+        artist_specific_credits = []
+        if credits_tree:
+            credits_tree = credits_tree.find_all('li')
+            for item in credits_tree:
+                artist_part_temp = item.find('span').string
+                artist_part_temp = artist_part_temp.lower()
+                artists_temp = []
+                artists_temp_tree = item.find_all('a', href=re.compile("artist"))
+                for item_2 in artists_temp_tree:
+                    temp_id = item_2['href']
+                    temp_id = temp_id.split("/")
+                    temp_id = temp_id[len(temp_id) - 1]
+                    temp_id = temp_id.split("-")
+                    temp_id = temp_id[0]
+                    artists_temp.append({"url": item_2['href'], "id": temp_id})
+                    artist_rate_set.add(temp_id)
+                if "music by" in artist_part_temp:
+                    artist_specific_credits.append({"type": "music", "artists": artists_temp})
+                if "lyrics by" in artist_part_temp:
+                    artist_specific_credits.append({"type": "lyrics", "artists": artists_temp})
+                if "arranged by" in artist_part_temp:
+                    artist_specific_credits.append({"type": "arranged", "artists": artists_temp})
+                if "vocals" in artist_part_temp:
+                    artist_specific_credits.append({"type": "vocals", "artists": artists_temp})
+
+        logging.debug("Album credits: " + str(artist_specific_credits))
+        logging.debug("All artists: " + str(artist_rate_set))
     else:
         logging.debug("scraper:scrape_album: finishing scrape response status: " +
                       str(response.status_code) + ", on url: " + url)
@@ -296,8 +332,8 @@ def scrape_artist(url):
 
 
 # scrape_country("Yugoslavia")
-#scrape_album(
-#    'https://www.discogs.com/Riblja-%C4%8Corba-Buvlja-Pijaca/release/658548',
-#    'Yugoslavia', "1980")
-scrape_artist('https://www.discogs.com/artist/504779-Mom%C4%8Dilo-Bajagi%C4%87')
-scrape_artist('https://www.discogs.com/artist/525165-Bajaga-I-Instruktori')
+scrape_album(
+    'https://www.discogs.com/Riblja-%C4%8Corba-Buvlja-Pijaca/release/658548',
+    'Yugoslavia', "1980")
+# scrape_artist('https://www.discogs.com/artist/504779-Mom%C4%8Dilo-Bajagi%C4%87')
+# scrape_artist('https://www.discogs.com/artist/525165-Bajaga-I-Instruktori')

@@ -169,11 +169,25 @@ def scrape_album(url, country, decade):
         songs = []
         songs_tree = html_tree.find('div', {"id": "tracklist"})
         if songs_tree:
-            songs_tree = songs_tree.find_all('a', href=re.compile("track"))
+            songs_tree = songs_tree.find_all('tr')
             for item in songs_tree:
-                song_name = item.find('span', {"class": "tracklist_track_title"}).string
-                song_url = item['href']
-                songs.append({"name": song_name, "url": song_url})
+                song_name_tree = item.find('a', href=re.compile("track"))
+                if not song_name_tree:
+                    continue
+                song_name = song_name_tree.find('span', {"class": "tracklist_track_title"}).string
+                song_url = song_name_tree['href']
+                song_id = song_url.split("/")
+                song_id = song_id[len(song_id) - 1]
+                # Find duration of song
+                song_duration = None
+                song_duration_tree = item.find('td', {'class': 'tracklist_track_duration'})
+                if song_duration_tree:
+                    song_duration_tree = song_duration_tree.find('span')
+                    song_duration = song_duration_tree.string
+                    if song_duration:
+                        duration_parts = song_duration.split(":")
+                        song_duration = int(duration_parts[0]) * 60 + int(duration_parts[1])
+                songs.append({"name": song_name, "url": song_url, "duration": song_duration, "id": song_id})
 
         logging.debug("Album songs: " + str(songs))
 
@@ -186,7 +200,9 @@ def scrape_album(url, country, decade):
                 item = item.find('a', href=True)
                 version = item.string
                 version_url = item['href']
-                versions.append({"name": version, "url": version_url})
+                version_id = item['href'].split("/")
+                version_id = version_id[len(version_id)-1]
+                versions.append({"name": version, "url": version_url, "id": version_id})
 
         logging.debug("Album versions: " + str(versions))
 
@@ -197,5 +213,5 @@ def scrape_album(url, country, decade):
 
 # scrape_country("Yugoslavia")
 scrape_album(
-    'https://www.discogs.com/Riblja-%C4%8Corba-Ve%C4%8Deras-Vas-Zabavljaju-Muzi%C4%8Dari-Koji-Piju/master/248758',
+    'https://www.discogs.com/Various-%D0%98-%D0%88%D0%B0-%D0%A1%D0%B0%D0%BC-%D0%97%D0%B2%D0%B5%D0%B7%D0%B4%D0%B0%D1%88/release/5285792',
     'Yugoslavia', "1980")

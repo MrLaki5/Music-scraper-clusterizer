@@ -149,6 +149,13 @@ def scrape_album(url, country, decade):
         genres = []
         for item in genre_tree:
             genres.append(item.string)
+        # Get album year
+        year_tree = html_tree.find('a', href=re.compile("year"))
+        year = None
+        if year_tree:
+            year = year_tree.string
+            year = year.strip().split(" ")
+            year = year[len(year) - 1]
         # Get album formats
         format_tree = html_tree.find_all('a', href=re.compile("format_exact"))
         formats = []
@@ -169,7 +176,7 @@ def scrape_album(url, country, decade):
         logging.debug("Album info[album_site_id: " + str(album_site_id) + ", artist_url: " + album_artist_url +
                       ", album_title: " + album_title + ", genres: " + str(genres) + ", styles: " + str(styles)
                       + ", rating: " + str(rating) + ", country: " + country + ", decade: " + decade + ", formats: "
-                      + str(formats) + "]")
+                      + str(formats) + ", year: " + year + "]")
 
         # Get songs of album
         songs = []

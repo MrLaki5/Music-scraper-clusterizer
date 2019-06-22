@@ -187,7 +187,37 @@ def scrape_album(url, country, decade):
                     if song_duration:
                         duration_parts = song_duration.split(":")
                         song_duration = int(duration_parts[0]) * 60 + int(duration_parts[1])
-                songs.append({"name": song_name, "url": song_url, "duration": song_duration, "id": song_id})
+                # Extra artists
+                artists = []
+                artists_tree = item.find_all('span', {'class': 'tracklist_extra_artist_span'})
+                for item_2 in artists_tree:
+                    artist_name_tree = item_2.find('a', href=True)
+                    if not artist_name_tree:
+                        continue
+                    artist_name = artist_name_tree.string
+                    artist_url = artist_name_tree['href']
+                    artist_id = artist_url.split("/")
+                    artist_id = artist_id[len(artist_id) - 1].split("-")
+                    artist_id = artist_id[0]
+                    # Get artists doing in song
+                    artists_item = item_2.next
+                    artist_parts = []
+                    if artists_item:
+                        artists_item = artists_item.lower()
+                        artists_item = artists_item.split(" – ")[0]
+                        artists_item = artists_item.split(", ")
+                        if "music by" in artists_item:
+                            artist_parts.append("music")
+                        if "lyrics by" in artists_item:
+                            artist_parts.append("lyrics")
+                        if "arranged by" in artists_item:
+                            artist_parts.append("arranged")
+                        if "vocals" in artists_item:
+                            artist_parts.append("vocals")
+                    if len(artist_parts) > 0:
+                        artists.append({"name": artist_name, "url": artist_url, "id": artist_id, "part": artist_parts})
+                songs.append({"name": song_name, "url": song_url,
+                              "duration": song_duration, "id": song_id, "parts": artists})
 
         logging.debug("Album songs: " + str(songs))
 
@@ -211,7 +241,60 @@ def scrape_album(url, country, decade):
                       str(response.status_code) + ", on url: " + url)
 
 
+# Scrape group or person for artist details
+def scrape_artist(url):
+    response = requests.get(url)
+    if response.status_code == REQUEST_STATUS_OK:
+        # Create html_tree of all artist page
+        html_tree = BeautifulSoup(response.text, "html.parser")
+
+        # Get album id
+        artist_site_id = response.url.split("/")
+        artist_site_id = artist_site_id[len(artist_site_id) - 1]
+        artist_site_id = artist_site_id.split("-")
+        artist_site_id = artist_site_id[0]
+
+        # Find artist name
+        artist_name = None
+        artist_name_tree = html_tree.find('h1', {'class': 'hide_mobile'})
+        if artist_name_tree:
+            artist_name = artist_name_tree.string
+
+        # Return if there is no name and log it
+        if not artist_name:
+            logging.error("scraper:scrape_artist: artist does not have name, on url: " + url)
+            return
+
+        # Find vocals num
+        vocals_num = None
+        vocals_html_tree = html_tree.find('a', {'data-credit-subtype': 'Vocals'})
+        if vocals_html_tree:
+            vocals_html_tree = vocals_html_tree.find('span', {'class': 'facet_count'})
+            vocals_num = vocals_html_tree.string
+
+        # Check if group (if it has members)
+        is_group_tree = html_tree.find_all('div', {'class': 'head'})
+        is_group = False
+        for item in is_group_tree:
+            if item.string == "Members:":
+                is_group = True
+                break
+
+        # Find sites
+        sites = []
+        sites_tree = html_tree.find_all('a', {'rel': 'nofollow'}, href=True)
+        for item in sites_tree:
+            sites.append(item['href'])
+
+        logging.debug("Artist info[name: " + artist_name + " , is_group: " + str(is_group) + " , id: "
+                      + artist_site_id + " , vocal num: " + vocals_num + " , sites: " + str(sites) + "]")
+    else:
+        logging.error("scraper:scrape_artist: response status: " + str(response.status_code) + ", on url: " + url)
+
+
 # scrape_country("Yugoslavia")
-scrape_album(
-    'https://www.discogs.com/Various-%D0%98-%D0%88%D0%B0-%D0%A1%D0%B0%D0%BC-%D0%97%D0%B2%D0%B5%D0%B7%D0%B4%D0%B0%D1%88/release/5285792',
-    'Yugoslavia', "1980")
+#scrape_album(
+#    'https://www.discogs.com/Riblja-%C4%8Corba-Buvlja-Pijaca/release/658548',
+#    'Yugoslavia', "1980")
+scrape_artist('https://www.discogs.com/artist/504779-Mom%C4%8Dilo-Bajagi%C4%87')
+scrape_artist('https://www.discogs.com/artist/525165-Bajaga-I-Instruktori')

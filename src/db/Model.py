@@ -65,4 +65,5 @@ person_on_artist = Table('person_on_artist', metadata,
 
 person_on_song = Table('person_on_song', metadata,
                        Column('id_person', ForeignKey('person.id'), nullable=False, primary_key=True),
-                       Column('id_song', ForeignKey('song.id'), nullable=False, primary_key=True))
+                       Column('id_song', ForeignKey('song.id'), nullable=False, primary_key=True),
+                       Enum('type', 'arranged', 'lyrics', 'music', 'vocals'), default='vocals', primary_key=True)

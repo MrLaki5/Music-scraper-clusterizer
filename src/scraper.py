@@ -308,7 +308,7 @@ def scrape_album(url, country, decade):
         # Get album id, if it doesn't exist create it
         album_group_id = None
         for item in versions:
-            query = """SELECT album.name FROM album WHERE album.site_id = :id_curr"""
+            query = """SELECT album.id_album_group FROM album WHERE album.site_id = :id_curr"""
             par_arr = {"id_curr": item["id"]}
             db_album = db.check_if_exists_in_db(query, par_arr)
             if db_album:
@@ -317,7 +317,7 @@ def scrape_album(url, country, decade):
         if not album_group_id:
             query = """INSERT INTO album_group DEFAULT VALUES RETURNING id as id"""
             album_group_id = db.insert_in_db(query, None)
-
+        # Add album to db
         create_params = {
             "site_id": album_site_id,
             "group_id": album_group_id,
@@ -328,8 +328,77 @@ def scrape_album(url, country, decade):
             "name": album_title,
             "is_cyrillic": not only_roman_chars(album_title)
         }
-
-        print(str(create_params))
+        query = """INSERT INTO album(site_id, id_album_group, rating, year, decade, country, name, is_cyrillic)
+         VALUES(:site_id, :group_id, :ating, :year, :decade, :country, :name, :is_cyrillic) RETURNING id as id"""
+        album_id = db.insert_in_db(query, create_params)
+        if not album_id:
+            logging.error("scraper:scrape_album: album not added to db, album: " + str(create_params))
+            return
+        # Add genres to db
+        query = """INSERT INTO album_genre(content, id_album) VALUES(:content, :album_id) RETURNING id as id"""
+        for item in genres:
+            params = {
+                "content": item,
+                "album_id": album_id
+            }
+            gen_id = db.insert_in_db(query, params)
+            if not gen_id:
+                logging.error("scraper:scrape_album: genre not added to db, album: " + str(create_params)
+                              + ", genre: " + item)
+        # Add styles to db
+        query = """INSERT INTO album_style(content, id_album) VALUES(:content, :album_id) RETURNING id as id"""
+        for item in styles:
+            params = {
+                "content": item,
+                "album_id": album_id
+            }
+            gen_id = db.insert_in_db(query, params)
+            if not gen_id:
+                logging.error("scraper:scrape_album: style not added to db, album: " + str(create_params)
+                              + ", style: " + item)
+        # Add formats to db
+        query = """INSERT INTO album_format(content, id_album) VALUES(:content, :album_id) RETURNING id as id"""
+        for item in formats:
+            params = {
+                "content": item,
+                "album_id": album_id
+            }
+            gen_id = db.insert_in_db(query, params)
+            if not gen_id:
+                logging.error("scraper:scrape_album: format not added to db, album: " + str(create_params)
+                              + ", format: " + item)
+        # Add songs and their relation with album to db
+        query_song_select = """SELECT song.id FROM song WHERE song.site_id = :id_curr"""
+        query_song = """INSERT INTO song(duration, name, site_id) VALUES(:duration, :name, :web) RETURNING id as id"""
+        query_relation = """INSERT INTO song_on_album(id_album, id_song) VALUES(:id_a, :id_s) RETURNING id as id"""
+        query_artist_select = ""
+        query_artist_relation = ""
+        for item in songs:
+            par_arr = {"id_curr": item["id"]}
+            db_album = db.check_if_exists_in_db(query_song_select, par_arr)
+            if db_album:
+                song_id = db_album['id']
+            else:
+                song_params = {
+                    "duration": item["duration"],
+                    "name": item["name"],
+                    "web": item["id"]
+                }
+                song_id = db.insert_in_db(query_song, song_params)
+                if not song_id:
+                    logging.error("scraper:scrape_album: song not added to db, album: " + str(create_params)
+                                  + ", song: " + str(item))
+                    continue
+            relation_params = {
+                "id_a": album_id,
+                "id_s": song_id
+            }
+            gen_val = db.insert_in_db(query_relation, relation_params)
+            if not gen_val:
+                logging.error("scraper:scrape_album: relation song album not added to db, album: " + str(create_params)
+                              + ", song: " + str(item))
+            for item_2 in item["parts"]:
+                pass
 
     else:
         logging.debug("scraper:scrape_album: finishing scrape response status: " +

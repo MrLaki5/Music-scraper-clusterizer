@@ -22,3 +22,36 @@ def recreate_database():
     metadata.drop_all(bind=engine)
     # Creates tables in database that we defined in metadata
     metadata.create_all(bind=engine)
+
+
+# Execute select query
+def check_if_exists_in_db(query, params):
+    statement = sqlalchemy.sql.text(query)
+    connection = engine.connect()
+    if params:
+        results = connection.execute(statement, params)
+    else:
+        results = connection.execute(statement)
+    if results.rowcount > 0:
+        ret_val = results.fetchone()
+    else:
+        ret_val = None
+    connection.close()
+    return ret_val
+
+
+# Execute insert query
+def insert_in_db(query, params):
+    statement = sqlalchemy.sql.text(query)
+    connection = engine.connect()
+    if params:
+        results = connection.execute(statement, params)
+    else:
+        results = connection.execute(statement)
+    if results.rowcount > 0:
+        ret_val = results.fetchone()
+        ret_val = ret_val["id"]
+    else:
+        ret_val = None
+    connection.close()
+    return ret_val

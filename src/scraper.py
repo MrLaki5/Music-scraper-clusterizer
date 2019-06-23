@@ -3,6 +3,9 @@ import requests
 import logging
 import re
 import urllib.parse as urlparse
+import sqlalchemy
+import db.Model as model
+import db
 
 # Logger configuration
 if __name__ == '__main__':
@@ -107,7 +110,13 @@ def scrape_country_decade_genre(country, decade, genre=None):
             logging.debug("scraper:scrape_country_decade_genre: albums found: country: " + country + ", decade: "
                           + decade + ", albums: " + str(albums))
             for item in albums:
-                scrape_album(BASE_URL + item)
+                item_id = item.split("/")
+                item_id = item_id[len(item_id) - 2] + "/" + item_id[len(item_id) - 1]
+
+                query = """SELECT album.name FROM album WHERE album.site_id = :id_curr"""
+                par_arr = {"id_curr": item_id}
+                if not db.check_if_exists_in_db(query, par_arr):
+                    scrape_album(BASE_URL + item, country, decade)
         else:
             # If flag is out of bound it means it has finished all pages for current filters
             logging.debug("scraper:scrape_country_decade_genre: finishing scrape response status: " +
@@ -245,7 +254,7 @@ def scrape_album(url, country, decade):
                 version = item.string
                 version_url = item['href']
                 version_id = item['href'].split("/")
-                version_id = version_id[len(version_id)-1]
+                version_id = version_id[len(version_id)-2] + "/" + version_id[len(version_id)-1]
                 versions.append({"name": version, "url": version_url, "id": version_id})
 
         logging.debug("Album versions: " + str(versions))
@@ -279,6 +288,21 @@ def scrape_album(url, country, decade):
 
         logging.debug("Album credits: " + str(artist_specific_credits))
         logging.debug("All artists: " + str(artist_rate_set))
+
+        # DB Manipulations
+        # Check if other versions already exist
+        album_group_id = None
+        for item in versions:
+            query = """SELECT album.name FROM album WHERE album.site_id = :id_curr"""
+            par_arr = {"id_curr": item["id"]}
+            db_album = db.check_if_exists_in_db(query, par_arr)
+            if db_album:
+                album_group_id = db_album['id_album_group']
+                break
+        if not album_group_id:
+            query = """INSERT INTO album_group DEFAULT VALUES RETURNING id as id"""
+            album_group_id = db.insert_in_db(query, None)
+
     else:
         logging.debug("scraper:scrape_album: finishing scrape response status: " +
                       str(response.status_code) + ", on url: " + url)
@@ -338,9 +362,9 @@ def scrape_artist(url):
         return False
 
 
-# scrape_country("Yugoslavia")
-scrape_album(
-    'https://www.discogs.com/Riblja-%C4%8Corba-Buvlja-Pijaca/release/658548',
-    'Yugoslavia', "1980")
+scrape_country("Yugoslavia")
+# scrape_album(
+#    'https://www.discogs.com/Riblja-%C4%8Corba-Buvlja-Pijaca/release/658548',
+#    'Yugoslavia', "1980")
 # scrape_artist('https://www.discogs.com/artist/504779-Mom%C4%8Dilo-Bajagi%C4%87')
 # scrape_artist('https://www.discogs.com/artist/525165-Bajaga-I-Instruktori')

@@ -6,6 +6,20 @@ import urllib.parse as urlparse
 import sqlalchemy
 import db.Model as model
 import db
+import unicodedata as ud
+
+
+def is_latin(uchr):
+    latin_letters = {}
+    try:
+        return latin_letters[uchr]
+    except KeyError:
+        return latin_letters.setdefault(uchr, 'LATIN' in ud.name(uchr))
+
+
+def only_roman_chars(unistr):
+    return all(is_latin(uchr) for uchr in unistr if uchr.isalpha())  # isalpha suggested by John Machin
+
 
 # Logger configuration
 if __name__ == '__main__':
@@ -131,7 +145,7 @@ def scrape_album(url, country, decade):
         html_tree = BeautifulSoup(response.text, "html.parser")
         # Get album id
         album_site_id = response.url.split("/")
-        album_site_id = album_site_id[len(album_site_id) - 1]
+        album_site_id = album_site_id[len(album_site_id) - 2] + "/" + album_site_id[len(album_site_id) - 1]
         # Create artist id rate set
         artist_rate_set = set()
         # Get title header of album
@@ -165,6 +179,7 @@ def scrape_album(url, country, decade):
             year = year_tree.string
             year = year.strip().split(" ")
             year = year[len(year) - 1]
+            year = int(year)
         # Get album formats
         format_tree = html_tree.find_all('a', href=re.compile("format_exact"))
         formats = []
@@ -185,7 +200,7 @@ def scrape_album(url, country, decade):
         logging.debug("Album info[album_site_id: " + str(album_site_id) + ", artist_url: " + album_artist_url +
                       ", album_title: " + album_title + ", genres: " + str(genres) + ", styles: " + str(styles)
                       + ", rating: " + str(rating) + ", country: " + country + ", decade: " + decade + ", formats: "
-                      + str(formats) + ", year: " + year + "]")
+                      + str(formats) + ", year: " + str(year) + "]")
 
         # Get songs of album
         songs = []
@@ -254,7 +269,7 @@ def scrape_album(url, country, decade):
                 version = item.string
                 version_url = item['href']
                 version_id = item['href'].split("/")
-                version_id = version_id[len(version_id)-2] + "/" + version_id[len(version_id)-1]
+                version_id = version_id[len(version_id) - 2] + "/" + version_id[len(version_id) - 1]
                 versions.append({"name": version, "url": version_url, "id": version_id})
 
         logging.debug("Album versions: " + str(versions))
@@ -290,7 +305,7 @@ def scrape_album(url, country, decade):
         logging.debug("All artists: " + str(artist_rate_set))
 
         # DB Manipulations
-        # Check if other versions already exist
+        # Get album id, if it doesn't exist create it
         album_group_id = None
         for item in versions:
             query = """SELECT album.name FROM album WHERE album.site_id = :id_curr"""
@@ -302,6 +317,19 @@ def scrape_album(url, country, decade):
         if not album_group_id:
             query = """INSERT INTO album_group DEFAULT VALUES RETURNING id as id"""
             album_group_id = db.insert_in_db(query, None)
+
+        create_params = {
+            "site_id": album_site_id,
+            "group_id": album_group_id,
+            "rating": rating,
+            "year": year,
+            "decade": int(decade),
+            "country": country,
+            "name": album_title,
+            "is_cyrillic": not only_roman_chars(album_title)
+        }
+
+        print(str(create_params))
 
     else:
         logging.debug("scraper:scrape_album: finishing scrape response status: " +
@@ -362,9 +390,9 @@ def scrape_artist(url):
         return False
 
 
-scrape_country("Yugoslavia")
-# scrape_album(
-#    'https://www.discogs.com/Riblja-%C4%8Corba-Buvlja-Pijaca/release/658548',
-#    'Yugoslavia', "1980")
+# scrape_country("Yugoslavia")
+scrape_album(
+    'https://www.discogs.com/%D0%91%D0%B0j%D0%B0%D0%B3%D0%B0-%D0%98%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%82%D0%BE%D1%80%D0%B8-%D0%94%D0%B0%D1%99%D0%B8%D0%BD%D0%B0-%D0%94%D0%B8%D0%BC-%D0%9F%D1%80%D0%B0%D1%88%D0%B8%D0%BD%D0%B0/master/712784',
+    'Yugoslavia', "1980")
 # scrape_artist('https://www.discogs.com/artist/504779-Mom%C4%8Dilo-Bajagi%C4%87')
 # scrape_artist('https://www.discogs.com/artist/525165-Bajaga-I-Instruktori')

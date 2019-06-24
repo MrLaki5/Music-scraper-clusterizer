@@ -57,12 +57,11 @@ song_on_album = Table('song_on_album', metadata,
                       Column('id_song', ForeignKey('song.id'), nullable=False, primary_key=True))
 
 artist_on_song = Table('artist_on_song', metadata,
-                       Column('id_person', ForeignKey('artist.id'), nullable=False, primary_key=True),
+                       Column('id_artist', ForeignKey('artist.id'), nullable=False, primary_key=True),
                        Column('id_song', ForeignKey('song.id'), nullable=False, primary_key=True),
                        Column('type', Enum('arranged', 'lyrics', 'music', 'vocals', name='contribution'),
                               default='vocals', primary_key=True))
 
 artist_rating = Table('artist_rating', metadata,
-                      Column('id_person', ForeignKey('artist.id'), nullable=False, primary_key=True),
-                      Column('id_song', ForeignKey('song.id'), nullable=False, primary_key=True),
-                      Column('rating', Numeric(20, 5), nullable=True))
+                      Column('id_artist', ForeignKey('artist.id'), nullable=False, primary_key=True),
+                      Column('id_album', ForeignKey('album.id'), nullable=False, primary_key=True))

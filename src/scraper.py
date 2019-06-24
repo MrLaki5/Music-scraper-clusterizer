@@ -367,12 +367,13 @@ def scrape_album(url, country, decade):
             if not gen_id:
                 logging.error("scraper:scrape_album: format not added to db, album: " + str(create_params)
                               + ", format: " + item)
-        # Add songs and their relation with album to db
+        # Add songs and their relation with album and artists to db
         query_song_select = """SELECT song.id FROM song WHERE song.site_id = :id_curr"""
         query_song = """INSERT INTO song(duration, name, site_id) VALUES(:duration, :name, :web) RETURNING id as id"""
         query_relation = """INSERT INTO song_on_album(id_album, id_song) VALUES(:id_a, :id_s) RETURNING id as id"""
-        query_artist_select = ""
-        query_artist_relation = ""
+        query_artist_select = "SELECT artist.id FROM artist WHERE artist.site_id = :id_curr"
+        query_artist_relation = "INSERT INTO artist_on_song(id_artist, id_song, type) " \
+                                "VALUES(:id_a, :id_s, :type) RETURNING id as id"
         for item in songs:
             par_arr = {"id_curr": item["id"]}
             db_album = db.check_if_exists_in_db(query_song_select, par_arr)
@@ -398,8 +399,49 @@ def scrape_album(url, country, decade):
                 logging.error("scraper:scrape_album: relation song album not added to db, album: " + str(create_params)
                               + ", song: " + str(item))
             for item_2 in item["parts"]:
-                pass
-
+                parts_params = {
+                    "id_curr": item_2["id"]
+                }
+                db_artist = db.check_if_exists_in_db(query_artist_select, parts_params)
+                if db_artist:
+                    artist_id = db_artist['id']
+                else:
+                    artist_id = scrape_artist(BASE_URL + item_2["artist_url"])
+                if artist_id:
+                    for part in item_2["part"]:
+                        relation_params = {
+                            "id_a": artist_id,
+                            "id_s": song_id,
+                            "type": part
+                        }
+                        gen_val = db.insert_in_db(query_artist_relation, relation_params)
+                        if not gen_val:
+                            logging.error(
+                                "scraper:scrape_album: relation song artist not added to db, album: "
+                                + str(create_params) + ", artist: " + str(item_2) + ", part: " + part)
+        # Add ratings, relation artist with album to db
+        query_artist_select = "SELECT artist.id FROM artist WHERE artist.site_id = :id_curr"
+        query_artist_relation = "INSERT INTO artist_rating(id_artist, id_album) " \
+                                "VALUES(:id_artist, :id_album) RETURNING id as id"
+        for item in artist_rate_set:
+            parts_params = {
+                "id_curr": item
+            }
+            db_artist = db.check_if_exists_in_db(query_artist_select, parts_params)
+            if db_artist:
+                artist_id = db_artist['id']
+            else:
+                artist_id = scrape_artist(BASE_URL + "/artist/" + item)
+            if artist_id:
+                relation_params = {
+                    "id_artist": artist_id,
+                    "id_album": album_id,
+                }
+                gen_val = db.insert_in_db(query_artist_relation, relation_params)
+                if not gen_val:
+                    logging.error(
+                        "scraper:scrape_album: relation album artist rating not added to db, album: "
+                        + str(create_params) + ", artist id: " + str(item))
     else:
         logging.debug("scraper:scrape_album: finishing scrape response status: " +
                       str(response.status_code) + ", on url: " + url)
@@ -427,7 +469,7 @@ def scrape_artist(url):
         # Return if there is no name and log it
         if not artist_name:
             logging.error("scraper:scrape_artist: artist does not have name, on url: " + url)
-            return False
+            return None
 
         # Find vocals num
         vocals_num = None
@@ -453,10 +495,37 @@ def scrape_artist(url):
         logging.debug("Artist info[name: " + artist_name + " , is_group: " + str(is_group) + " , id: "
                       + artist_site_id + " , vocal num: " + vocals_num + " , sites: " + str(sites) + "]")
 
-        return True
+        # DB Manipulations
+        # Insert artist into db
+        query = """INSERT INTO artist(site_id, is_group, vocals, name) VALUES
+        (:site_id, :is_group, :vocals, :name) RETURNING id as id"""
+        params = {
+            "site_id": artist_site_id,
+            "is_group": is_group,
+            "vocals": vocals_num,
+            "name": artist_name
+        }
+        artist_id = db.insert_in_db(query, params)
+        if not artist_id:
+            logging.error("scraper:scrape_artist: artist not added to db, artist: " + artist_name
+                          + ", site_id: " + artist_site_id)
+            return None
+        # Add sites to DB
+        query = """INSERT INTO artist_web(id_artist, web) VALUES
+                (:id_artist, :web) RETURNING id as id"""
+        for item in sites:
+            params = {
+                "id_artist": artist_id,
+                "web": item
+            }
+            gen_id = db.insert_in_db(query, params)
+            if not gen_id:
+                logging.error("scraper:scrape_artist: site for artist not added to db, artist: " + artist_name
+                              + ", site: " + item)
+        return artist_id
     else:
         logging.error("scraper:scrape_artist: response status: " + str(response.status_code) + ", on url: " + url)
-        return False
+        return None
 
 
 # scrape_country("Yugoslavia")

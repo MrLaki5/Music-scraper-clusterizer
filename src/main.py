@@ -14,8 +14,8 @@ db.recreate_database()
 
 
 
-statement = sqlalchemy.sql.text(""" INSERT INTO album_group DEFAULT VALUES""")
-ret = db.engine.connect().execute(statement)
+# statement = sqlalchemy.sql.text(""" INSERT INTO album_group DEFAULT VALUES""")
+# ret = db.engine.connect().execute(statement)
 
 #statement = sqlalchemy.sql.text(""" INSERT INTO artist_name(id_artist, name) VALUES(1, 'Bora Corba') """)
 #db.engine.connect().execute(statement)

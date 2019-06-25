@@ -329,7 +329,7 @@ def scrape_album(url, country, decade):
             "is_cyrillic": not only_roman_chars(album_title)
         }
         query = """INSERT INTO album(site_id, id_album_group, rating, year, decade, country, name, is_cyrillic)
-         VALUES(:site_id, :group_id, :ating, :year, :decade, :country, :name, :is_cyrillic) RETURNING id as id"""
+         VALUES(:site_id, :group_id, :rating, :year, :decade, :country, :name, :is_cyrillic) RETURNING id as id"""
         album_id = db.insert_in_db(query, create_params)
         if not album_id:
             logging.error("scraper:scrape_album: album not added to db, album: " + str(create_params))
@@ -406,7 +406,7 @@ def scrape_album(url, country, decade):
                 if db_artist:
                     artist_id = db_artist['id']
                 else:
-                    artist_id = scrape_artist(BASE_URL + item_2["artist_url"])
+                    artist_id = scrape_artist(BASE_URL + item_2["url"])
                 if artist_id:
                     for part in item_2["part"]:
                         relation_params = {
@@ -493,7 +493,7 @@ def scrape_artist(url):
             sites.append(item['href'])
 
         logging.debug("Artist info[name: " + artist_name + " , is_group: " + str(is_group) + " , id: "
-                      + artist_site_id + " , vocal num: " + vocals_num + " , sites: " + str(sites) + "]")
+                      + artist_site_id + " , vocal num: " + str(vocals_num) + " , sites: " + str(sites) + "]")
 
         # DB Manipulations
         # Insert artist into db
@@ -528,9 +528,9 @@ def scrape_artist(url):
         return None
 
 
-# scrape_country("Yugoslavia")
-scrape_album(
-    'https://www.discogs.com/%D0%91%D0%B0j%D0%B0%D0%B3%D0%B0-%D0%98%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%82%D0%BE%D1%80%D0%B8-%D0%94%D0%B0%D1%99%D0%B8%D0%BD%D0%B0-%D0%94%D0%B8%D0%BC-%D0%9F%D1%80%D0%B0%D1%88%D0%B8%D0%BD%D0%B0/master/712784',
-    'Yugoslavia', "1980")
+scrape_country("Yugoslavia")
+# scrape_album(
+#    'https://www.discogs.com/%D0%91%D0%B0j%D0%B0%D0%B3%D0%B0-%D0%98%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%82%D0%BE%D1%80%D0%B8-%D0%94%D0%B0%D1%99%D0%B8%D0%BD%D0%B0-%D0%94%D0%B8%D0%BC-%D0%9F%D1%80%D0%B0%D1%88%D0%B8%D0%BD%D0%B0/master/712784',
+#    'Yugoslavia', "1980")
 # scrape_artist('https://www.discogs.com/artist/504779-Mom%C4%8Dilo-Bajagi%C4%87')
 # scrape_artist('https://www.discogs.com/artist/525165-Bajaga-I-Instruktori')

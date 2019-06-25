@@ -1,4 +1,4 @@
-from sqlalchemy import MetaData, Table, Column, Integer, String, ForeignKey, Numeric, Enum, Boolean, UniqueConstraint
+from sqlalchemy import MetaData, Table, Column, Integer, String, ForeignKey, Numeric, Enum, Boolean
 
 # Creates metadata where all tables will be written
 metadata = MetaData()
@@ -43,7 +43,7 @@ artist = Table('artist', metadata,
 artist_web = Table('artist_web', metadata,
                    Column('id', Integer, primary_key=True, autoincrement=True),
                    Column('id_artist', ForeignKey('artist.id'), nullable=False),
-                   Column('web', String(500), nullable=False))
+                   Column('web', String(200), nullable=False))
 
 song = Table('song', metadata,
              Column('id', Integer, primary_key=True, autoincrement=True),
@@ -53,21 +53,15 @@ song = Table('song', metadata,
 
 # Relation tables
 song_on_album = Table('song_on_album', metadata,
-                      Column('id', Integer, primary_key=True, autoincrement=True),
-                      Column('id_album', ForeignKey('album.id'), nullable=False),
-                      Column('id_song', ForeignKey('song.id'), nullable=False),
-                      UniqueConstraint("id_album", "id_song"))
+                      Column('id_album', ForeignKey('album.id'), nullable=False, primary_key=True),
+                      Column('id_song', ForeignKey('song.id'), nullable=False, primary_key=True))
 
 artist_on_song = Table('artist_on_song', metadata,
-                       Column('id', Integer, primary_key=True, autoincrement=True),
-                       Column('id_artist', ForeignKey('artist.id'), nullable=False),
-                       Column('id_song', ForeignKey('song.id'), nullable=False),
+                       Column('id_artist', ForeignKey('artist.id'), nullable=False, primary_key=True),
+                       Column('id_song', ForeignKey('song.id'), nullable=False, primary_key=True),
                        Column('type', Enum('arranged', 'lyrics', 'music', 'vocals', name='contribution'),
-                              default='vocals'),
-                       UniqueConstraint("id_artist", "id_song", "type"))
+                              default='vocals', primary_key=True))
 
 artist_rating = Table('artist_rating', metadata,
-                      Column('id', Integer, primary_key=True, autoincrement=True),
-                      Column('id_artist', ForeignKey('artist.id'), nullable=False),
-                      Column('id_album', ForeignKey('album.id'), nullable=False),
-                      UniqueConstraint("id_artist", "id_album"))
+                      Column('id_artist', ForeignKey('artist.id'), nullable=False, primary_key=True),
+                      Column('id_album', ForeignKey('album.id'), nullable=False, primary_key=True))

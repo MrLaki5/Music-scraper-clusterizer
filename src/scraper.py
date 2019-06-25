@@ -27,8 +27,8 @@ def only_roman_chars(unistr):
 
 # Logger configuration
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
-    logging.debug("Logger started!")
+    logging.basicConfig(level=logging.DEBUG)
+    logging.info("Logger started!")
 
 REQUEST_STATUS_OK = 200
 
@@ -146,7 +146,7 @@ def scrape_country_decade_genre(country, decade, genre=None, album_counter=0):
                                      str(decade) + ", genre: " + str(genre) + ", album number: "
                                      + str(album_counter) + ", artist scraped: "
                                      + str(scrape_artist_num) + ", time: " + "{0:.2f}".format(time2 - time1)
-                                     + "s , url: " + BASE_URL + item)
+                                     + "s, url: " + BASE_URL + item)
                     else:
                         logging.error("Country: " + country + ", decade: " + str(decade) +
                                       ", genre: " + str(genre) + ", album not scraped, url: " + BASE_URL + item)
@@ -244,7 +244,15 @@ def scrape_album(url, country, decade):
                     song_duration = song_duration_tree.string
                     if song_duration:
                         duration_parts = song_duration.split(":")
-                        song_duration = int(duration_parts[0]) * 60 + int(duration_parts[1])
+                        try:
+                            if len(duration_parts) >= 2:
+                                song_duration = int(duration_parts[0]) * 60 + int(duration_parts[1])
+                            else:
+                                song_duration = int(duration_parts[0])
+                        except Exception as ex:
+                            logging.error("scraper:scrape_album: error in calculating duration of song, exception: "
+                                          + str(ex) + ", url: " + url)
+                            song_duration = None
                 # Extra artists
                 artists = []
                 artists_tree = item.find_all('span', {'class': 'tracklist_extra_artist_span'})
@@ -428,6 +436,8 @@ def scrape_album(url, country, decade):
                     artist_id = db_artist['id']
                 else:
                     artist_id = scrape_artist(BASE_URL + item_2["url"])
+                    if artist_id:
+                        scrape_artist_num += 1
                 if artist_id:
                     for part in item_2["part"]:
                         relation_params = {
@@ -440,31 +450,32 @@ def scrape_album(url, country, decade):
                             logging.error(
                                 "scraper:scrape_album: relation song artist not added to db, album: "
                                 + str(create_params) + ", artist: " + str(item_2) + ", part: " + part)
-        # Add ratings, relation artist with album to db
+        # Add ratings, relation artist with album to db, if rating exists
         query_artist_select = "SELECT artist.id FROM artist WHERE artist.site_id = :id_curr"
         query_artist_relation = "INSERT INTO artist_rating(id_artist, id_album) " \
                                 "VALUES(:id_artist, :id_album) RETURNING id as id"
-        for item in artist_rate_set:
-            parts_params = {
-                "id_curr": item
-            }
-            db_artist = db.check_if_exists_in_db(query_artist_select, parts_params)
-            if db_artist:
-                artist_id = db_artist['id']
-            else:
-                artist_id = scrape_artist(BASE_URL + "/artist/" + item)
-                if artist_id:
-                    scrape_artist_num += 1
-            if artist_id:
-                relation_params = {
-                    "id_artist": artist_id,
-                    "id_album": album_id,
+        if rating:
+            for item in artist_rate_set:
+                parts_params = {
+                    "id_curr": item
                 }
-                gen_val = db.insert_in_db(query_artist_relation, relation_params)
-                if not gen_val:
-                    logging.error(
-                        "scraper:scrape_album: relation album artist rating not added to db, album: "
-                        + str(create_params) + ", artist id: " + str(item))
+                db_artist = db.check_if_exists_in_db(query_artist_select, parts_params)
+                if db_artist:
+                    artist_id = db_artist['id']
+                else:
+                    artist_id = scrape_artist(BASE_URL + "/artist/" + item)
+                    if artist_id:
+                        scrape_artist_num += 1
+                if artist_id:
+                    relation_params = {
+                        "id_artist": artist_id,
+                        "id_album": album_id,
+                    }
+                    gen_val = db.insert_in_db(query_artist_relation, relation_params)
+                    if not gen_val:
+                        logging.error(
+                            "scraper:scrape_album: relation album artist rating not added to db, album: "
+                            + str(create_params) + ", artist id: " + str(item))
     else:
         logging.debug("scraper:scrape_album: finishing scrape response status: " +
                       str(response.status_code) + ", on url: " + url)
@@ -553,7 +564,7 @@ def scrape_artist(url):
         return None
 
 
-scrape_country("Yugoslavia")
+# scrape_country("Yugoslavia")
 # scrape_album(
 #    'https://www.discogs.com/%D0%91%D0%B0j%D0%B0%D0%B3%D0%B0-%D0%98%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%82%D0%BE%D1%80%D0%B8-%D0%94%D0%B0%D1%99%D0%B8%D0%BD%D0%B0-%D0%94%D0%B8%D0%BC-%D0%9F%D1%80%D0%B0%D1%88%D0%B8%D0%BD%D0%B0/master/712784',
 #    'Yugoslavia', "1980")

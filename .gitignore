@@ -10,3 +10,5 @@
 venv/
 
 venv_36/
+
+src/db/__pycache__/*

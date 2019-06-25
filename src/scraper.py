@@ -3,12 +3,16 @@ import requests
 import logging
 import re
 import urllib.parse as urlparse
-import sqlalchemy
-import db.Model as model
 import db
 import unicodedata as ud
+import threading
+import time
+
+album_count_lock = threading.Lock
+album_count = 0
 
 
+# Functions for checking if string is in cyrillic or latin letters
 def is_latin(uchr):
     latin_letters = {}
     try:
@@ -23,7 +27,7 @@ def only_roman_chars(unistr):
 
 # Logger configuration
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     logging.debug("Logger started!")
 
 REQUEST_STATUS_OK = 200
@@ -43,6 +47,7 @@ def scrape_country(country):
     url = BASE_URL_SEARCH + "?" + COUNTRY_ATTR + country + "&" + FAST_LAYOUT_ATTR
     response = requests.get(url)
     if response.status_code == REQUEST_STATUS_OK:
+        album_counter = 0
         # Create html_tree of all page
         html_tree = BeautifulSoup(response.text, "html.parser")
         # Get side filter menu
@@ -55,13 +60,14 @@ def scrape_country(country):
             decades.append(str(int(item.find("small").next.next)))
         logging.debug("Decades: " + str(decades))
         for item in decades:
-            scrape_country_decade(country, item)
+            album_counter = scrape_country_decade(country, item, album_counter)
+        logging.info("Albums scraped, country: " + country + ", album count: " + str(album_count))
     else:
         logging.error("scraper:scrape_country: response status: " + str(response.status_code) + ", on url: " + url)
 
 
 # Gets all data for one country, for one specific decade
-def scrape_country_decade(country, decade):
+def scrape_country_decade(country, decade, album_counter):
     url = BASE_URL_SEARCH + "?" + COUNTRY_ATTR + country + "&" + DECADE_ATTR + decade + "&" + FAST_LAYOUT_ATTR
     response = requests.get(url)
     if response.status_code == REQUEST_STATUS_OK:
@@ -82,17 +88,18 @@ def scrape_country_decade(country, decade):
             logging.debug("scraper:scrape_country_decade: genres found: country: " + country + ", decade: "
                           + decade + ", genres: " + str(genres))
             for item in genres:
-                scrape_country_decade_genre(country, decade, item)
+                album_counter = scrape_country_decade_genre(country, decade, item, album_counter)
         else:
             logging.debug("scraper:scrape_country_decade: no genres found: country: " + country + ", decade: " + decade)
-            scrape_country_decade_genre(country, decade)
+            album_counter = scrape_country_decade_genre(country, decade, album_counter)
     else:
         logging.error("scraper:scrape_country_decade: response status: " +
                       str(response.status_code) + ", on url: " + url)
+    return album_counter
 
 
 # Gets all data for one country, for one specific decade, for one specific genre
-def scrape_country_decade_genre(country, decade, genre=None):
+def scrape_country_decade_genre(country, decade, genre=None, album_counter=0):
     work_flag = True
     page_num = 0
     while work_flag:
@@ -130,15 +137,29 @@ def scrape_country_decade_genre(country, decade, genre=None):
                 query = """SELECT album.name FROM album WHERE album.site_id = :id_curr"""
                 par_arr = {"id_curr": item_id}
                 if not db.check_if_exists_in_db(query, par_arr):
-                    scrape_album(BASE_URL + item, country, decade)
+                    time1 = time.time()
+                    status, scrape_artist_num = scrape_album(BASE_URL + item, country, decade)
+                    time2 = time.time()
+                    if status:
+                        album_counter += 1
+                        logging.info("Country: " + country + ", decade: " +
+                                     str(decade) + ", genre: " + str(genre) + ", album number: "
+                                     + str(album_counter) + ", artist scraped: "
+                                     + str(scrape_artist_num) + ", time: " + "{0:.2f}".format(time2 - time1)
+                                     + "s , url: " + BASE_URL + item)
+                    else:
+                        logging.error("Country: " + country + ", decade: " + str(decade) +
+                                      ", genre: " + str(genre) + ", album not scraped, url: " + BASE_URL + item)
         else:
             # If flag is out of bound it means it has finished all pages for current filters
             logging.debug("scraper:scrape_country_decade_genre: finishing scrape response status: " +
                           str(response.status_code) + ", on url: " + url)
             work_flag = False
+    return album_counter
 
 
 def scrape_album(url, country, decade):
+    scrape_artist_num = 0
     response = requests.get(url)
     if response.status_code == REQUEST_STATUS_OK:
         # Create html_tree of all page
@@ -333,7 +354,7 @@ def scrape_album(url, country, decade):
         album_id = db.insert_in_db(query, create_params)
         if not album_id:
             logging.error("scraper:scrape_album: album not added to db, album: " + str(create_params))
-            return
+            return False
         # Add genres to db
         query = """INSERT INTO album_genre(content, id_album) VALUES(:content, :album_id) RETURNING id as id"""
         for item in genres:
@@ -432,6 +453,8 @@ def scrape_album(url, country, decade):
                 artist_id = db_artist['id']
             else:
                 artist_id = scrape_artist(BASE_URL + "/artist/" + item)
+                if artist_id:
+                    scrape_artist_num += 1
             if artist_id:
                 relation_params = {
                     "id_artist": artist_id,
@@ -445,6 +468,8 @@ def scrape_album(url, country, decade):
     else:
         logging.debug("scraper:scrape_album: finishing scrape response status: " +
                       str(response.status_code) + ", on url: " + url)
+        return False, scrape_artist_num
+    return True, scrape_artist_num
 
 
 # Scrape group or person for artist details

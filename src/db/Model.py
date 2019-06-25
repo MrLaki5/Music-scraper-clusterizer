@@ -43,7 +43,7 @@ artist = Table('artist', metadata,
 artist_web = Table('artist_web', metadata,
                    Column('id', Integer, primary_key=True, autoincrement=True),
                    Column('id_artist', ForeignKey('artist.id'), nullable=False),
-                   Column('web', String(200), nullable=False))
+                   Column('web', String(500), nullable=False))
 
 song = Table('song', metadata,
              Column('id', Integer, primary_key=True, autoincrement=True),

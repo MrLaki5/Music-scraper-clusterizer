@@ -8,8 +8,8 @@ import unicodedata as ud
 import threading
 import time
 
-album_count_lock = threading.Lock
-album_count = 0
+# Lock used for synchronization of threads in scrape
+group_album_lock = threading.Lock()
 
 
 # Functions for checking if string is in cyrillic or latin letters
@@ -246,9 +246,12 @@ def scrape_album(url, country, decade):
                         duration_parts = song_duration.split(":")
                         try:
                             if len(duration_parts) >= 2:
-                                song_duration = int(duration_parts[0]) * 60 + int(duration_parts[1])
+                                part_one = duration_parts[0].replace("(", "").replace(")", "")
+                                part_two = duration_parts[1].replace("(", "").replace(")", "")
+                                song_duration = int(part_one) * 60 + int(part_two)
                             else:
-                                song_duration = int(duration_parts[0])
+                                part_one = duration_parts[0].replace("(", "").replace(")", "")
+                                song_duration = int(part_one)
                         except Exception as ex:
                             logging.error("scraper:scrape_album: error in calculating duration of song, exception: "
                                           + str(ex) + ", url: " + url)
@@ -336,16 +339,17 @@ def scrape_album(url, country, decade):
         # DB Manipulations
         # Get album id, if it doesn't exist create it
         album_group_id = None
-        for item in versions:
-            query = """SELECT album.id_album_group FROM album WHERE album.site_id = :id_curr"""
-            par_arr = {"id_curr": item["id"]}
-            db_album = db.check_if_exists_in_db(query, par_arr)
-            if db_album:
-                album_group_id = db_album['id_album_group']
-                break
-        if not album_group_id:
-            query = """INSERT INTO album_group DEFAULT VALUES RETURNING id as id"""
-            album_group_id = db.insert_in_db(query, None)
+        with group_album_lock:
+            for item in versions:
+                query = """SELECT album.id_album_group FROM album WHERE album.site_id = :id_curr"""
+                par_arr = {"id_curr": item["id"]}
+                db_album = db.check_if_exists_in_db(query, par_arr)
+                if db_album:
+                    album_group_id = db_album['id_album_group']
+                    break
+            if not album_group_id:
+                query = """INSERT INTO album_group DEFAULT VALUES RETURNING id as id"""
+                album_group_id = db.insert_in_db(query, None)
         # Add album to db
         create_params = {
             "site_id": album_site_id,

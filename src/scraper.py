@@ -246,9 +246,12 @@ def scrape_album(url, country, decade):
                         duration_parts = song_duration.split(":")
                         try:
                             if len(duration_parts) >= 2:
-                                song_duration = int(duration_parts[0]) * 60 + int(duration_parts[1])
+                                part_one = duration_parts[0].replace("(", "").replace(")", "")
+                                part_two = duration_parts[1].replace("(", "").replace(")", "")
+                                song_duration = int(part_one) * 60 + int(part_two)
                             else:
-                                song_duration = int(duration_parts[0])
+                                part_one = duration_parts[0].replace("(", "").replace(")", "")
+                                song_duration = int(part_one)
                         except Exception as ex:
                             logging.error("scraper:scrape_album: error in calculating duration of song, exception: "
                                           + str(ex) + ", url: " + url)

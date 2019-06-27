@@ -10,7 +10,7 @@ CONSOLE_LOG = True
 if __name__ == '__main__':
     log_name = datetime.datetime.now().strftime('%Y-%m-%d--%H-%M-%S') + ".log"
     if FILE_LOG:
-        logging.basicConfig(level=logging.INFO, handlers=[logging.FileHandler('./logs/' + log_name, 'w', 'utf-8')])
+        logging.basicConfig(level=logging.DEBUG, handlers=[logging.FileHandler('./logs/' + log_name, 'w', 'utf-8')])
         if CONSOLE_LOG:
             logging.getLogger().addHandler(logging.StreamHandler())
     else:
@@ -28,9 +28,21 @@ while work_flag:
     print("--------------------------")
     user_input = input("Choose: ")
     if user_input == "1":
+        w_f = True
+        th_num = 2
+        while w_f:
+            print("--------------------------")
+            print("Enter thread number: ")
+            print("--------------------------")
+            th_num = input("Choose: ")
+            try:
+                th_num = int(th_num)
+                w_f = False
+            except Exception as ex:
+                pass
         db.recreate_database()
         logging.info("Database recreated, starting scrape, time: " + str(datetime.datetime.now()))
-        scraper.scrape_country("Yugoslavia")
+        scraper.scrape_country("Yugoslavia", th_num)
     elif user_input == "2":
         work_flag = False
 

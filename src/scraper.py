@@ -6,7 +6,6 @@ import urllib.parse as urlparse
 import db
 import unicodedata as ud
 import threading
-import time
 import scrape_pool
 
 # Lock used for synchronization of threads in scrape
@@ -93,7 +92,7 @@ def scrape_country_decade(country, decade, pool):
                 scrape_country_decade_genre(country, decade, item, pool)
         else:
             logging.debug("scraper:scrape_country_decade: no genres found: country: " + country + ", decade: " + decade)
-            scrape_country_decade_genre(country, decade, pool)
+            scrape_country_decade_genre(country, decade, None,  pool)
     else:
         logging.error("scraper:scrape_country_decade: response status: " +
                       str(response.status_code) + ", on url: " + url)
@@ -135,8 +134,8 @@ def scrape_country_decade_genre(country, decade, genre=None, pool=None):
                 item_id = item.split("/")
                 item_id = item_id[len(item_id) - 2] + "/" + item_id[len(item_id) - 1]
 
-                query = """SELECT album.name FROM album WHERE album.site_id = :id_curr"""
-                par_arr = {"id_curr": item_id}
+                query = """SELECT album.name FROM album WHERE album.site_id = :site_id"""
+                par_arr = {"site_id": item_id}
                 if not db.check_if_exists_in_db(query, par_arr, "album", False):
                     pool.put_job(BASE_URL + item, country, decade, genre)
         else:
@@ -392,7 +391,7 @@ def scrape_album(url, country, decade):
         query_song_select = """SELECT song.id FROM song WHERE song.site_id = :id_curr"""
         query_song = """INSERT INTO song(duration, name, site_id) VALUES(:duration, :name, :web) RETURNING id as id"""
         query_relation = """INSERT INTO song_on_album(id_album, id_song) VALUES(:id_a, :id_s) RETURNING id as id"""
-        query_artist_select = "SELECT artist.id FROM artist WHERE artist.site_id = :id_curr"
+        query_artist_select = "SELECT artist.id FROM artist WHERE artist.site_id = :site_id"
         query_artist_relation = "INSERT INTO artist_on_song(id_artist, id_song, type) " \
                                 "VALUES(:id_a, :id_s, :type) RETURNING id as id"
         for item in songs:
@@ -417,7 +416,7 @@ def scrape_album(url, country, decade):
                               + ", song: " + str(item))
             for item_2 in item["parts"]:
                 parts_params = {
-                    "id_curr": item_2["id"]
+                    "site_id": item_2["id"]
                 }
                 db_artist = db.check_if_exists_in_db(query_artist_select, parts_params, "artist", True)
                 if db_artist:
@@ -439,13 +438,13 @@ def scrape_album(url, country, decade):
                                 "scraper:scrape_album: relation song artist not added to db, album: "
                                 + str(create_params) + ", artist: " + str(item_2) + ", part: " + part)
         # Add ratings, relation artist with album to db, if rating exists
-        query_artist_select = "SELECT artist.id FROM artist WHERE artist.site_id = :id_curr"
+        query_artist_select = "SELECT artist.id FROM artist WHERE artist.site_id = :site_id"
         query_artist_relation = "INSERT INTO artist_rating(id_artist, id_album) " \
                                 "VALUES(:id_artist, :id_album) RETURNING id as id"
         if rating:
             for item in artist_rate_set:
                 parts_params = {
-                    "id_curr": item
+                    "site_id": item
                 }
                 db_artist = db.check_if_exists_in_db(query_artist_select, parts_params, "artist", True)
                 if db_artist:
@@ -465,7 +464,7 @@ def scrape_album(url, country, decade):
                             "scraper:scrape_album: relation album artist rating not added to db, album: "
                             + str(create_params) + ", artist id: " + str(item))
     else:
-        logging.debug("scraper:scrape_album: finishing scrape response status: " +
+        logging.error("scraper:scrape_album: finishing scrape response status: " +
                       str(response.status_code) + ", on url: " + url)
         return False, scrape_artist_num
     return True, scrape_artist_num

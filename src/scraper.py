@@ -7,6 +7,7 @@ import db
 import unicodedata as ud
 import threading
 import time
+import scrape_pool
 
 # Lock used for synchronization of threads in scrape
 group_album_lock = threading.Lock()
@@ -43,11 +44,11 @@ LIMIT_MAX_ATTR = "limit=250"
 
 
 # Gets all data for one country, iterating through decades and genre
-def scrape_country(country):
+def scrape_country(country, thread_num):
     url = BASE_URL_SEARCH + "?" + COUNTRY_ATTR + country + "&" + FAST_LAYOUT_ATTR
     response = requests.get(url)
     if response.status_code == REQUEST_STATUS_OK:
-        album_counter = 0
+        pool = scrape_pool.ScrapePool(thread_num)
         # Create html_tree of all page
         html_tree = BeautifulSoup(response.text, "html.parser")
         # Get side filter menu
@@ -60,14 +61,15 @@ def scrape_country(country):
             decades.append(str(int(item.find("small").next.next)))
         logging.debug("Decades: " + str(decades))
         for item in decades:
-            album_counter = scrape_country_decade(country, item, album_counter)
-        logging.info("Albums scraped, country: " + country + ", album count: " + str(album_count))
+            scrape_country_decade(country, item, pool)
+        pool.interrupt_pool()
+        logging.info("Albums scraped, country: " + country + ", album count: " + str(pool.album_counter))
     else:
         logging.error("scraper:scrape_country: response status: " + str(response.status_code) + ", on url: " + url)
 
 
 # Gets all data for one country, for one specific decade
-def scrape_country_decade(country, decade, album_counter):
+def scrape_country_decade(country, decade, pool):
     url = BASE_URL_SEARCH + "?" + COUNTRY_ATTR + country + "&" + DECADE_ATTR + decade + "&" + FAST_LAYOUT_ATTR
     response = requests.get(url)
     if response.status_code == REQUEST_STATUS_OK:
@@ -88,18 +90,17 @@ def scrape_country_decade(country, decade, album_counter):
             logging.debug("scraper:scrape_country_decade: genres found: country: " + country + ", decade: "
                           + decade + ", genres: " + str(genres))
             for item in genres:
-                album_counter = scrape_country_decade_genre(country, decade, item, album_counter)
+                scrape_country_decade_genre(country, decade, item, pool)
         else:
             logging.debug("scraper:scrape_country_decade: no genres found: country: " + country + ", decade: " + decade)
-            album_counter = scrape_country_decade_genre(country, decade, album_counter)
+            scrape_country_decade_genre(country, decade, pool)
     else:
         logging.error("scraper:scrape_country_decade: response status: " +
                       str(response.status_code) + ", on url: " + url)
-    return album_counter
 
 
 # Gets all data for one country, for one specific decade, for one specific genre
-def scrape_country_decade_genre(country, decade, genre=None, album_counter=0):
+def scrape_country_decade_genre(country, decade, genre=None, pool=None):
     work_flag = True
     page_num = 0
     while work_flag:
@@ -137,25 +138,12 @@ def scrape_country_decade_genre(country, decade, genre=None, album_counter=0):
                 query = """SELECT album.name FROM album WHERE album.site_id = :id_curr"""
                 par_arr = {"id_curr": item_id}
                 if not db.check_if_exists_in_db(query, par_arr, "album", False):
-                    time1 = time.time()
-                    status, scrape_artist_num = scrape_album(BASE_URL + item, country, decade)
-                    time2 = time.time()
-                    if status:
-                        album_counter += 1
-                        logging.info("Country: " + country + ", decade: " +
-                                     str(decade) + ", genre: " + str(genre) + ", album number: "
-                                     + str(album_counter) + ", artist scraped: "
-                                     + str(scrape_artist_num) + ", time: " + "{0:.2f}".format(time2 - time1)
-                                     + "s, url: " + BASE_URL + item)
-                    else:
-                        logging.error("Country: " + country + ", decade: " + str(decade) +
-                                      ", genre: " + str(genre) + ", album not scraped, url: " + BASE_URL + item)
+                    pool.put_job(BASE_URL + item, country, decade, genre)
         else:
             # If flag is out of bound it means it has finished all pages for current filters
             logging.debug("scraper:scrape_country_decade_genre: finishing scrape response status: " +
                           str(response.status_code) + ", on url: " + url)
             work_flag = False
-    return album_counter
 
 
 def scrape_album(url, country, decade):

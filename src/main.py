@@ -36,10 +36,12 @@ while work_flag:
     if user_input == "1":
         db.recreate_database()
         logging.info("Database recreated")
+        time.sleep(0.1)
     elif user_input == "2":
         logging.info("Starting scrape, time: " + str(datetime.datetime.now()))
         scraper.scrape_country("Yugoslavia")
         scraper.scrape_country("Serbia")
+        time.sleep(0.1)
     elif user_input == "3":
         loc_w_flag = True
         while loc_w_flag:
@@ -53,6 +55,7 @@ while work_flag:
                 results = db.get_album_count_by_order()
                 for result in results:
                     logging.info(str(result))
+                time.sleep(0.1)
             elif query_num == "2":
                 loc_w_flag = False
     elif user_input == "4":

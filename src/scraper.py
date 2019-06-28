@@ -559,7 +559,8 @@ def scrape_artist(url):
 
         # Find sites
         sites = []
-        sites_tree = html_tree.find_all('a', {'rel': 'nofollow'}, href=True)
+        sites_tree = html_tree.find("div", {"class": "profile"})
+        sites_tree = sites_tree.find_all('a', {'rel': 'nofollow'}, href=True)
         for item in sites_tree:
             sites.append(item['href'])
 

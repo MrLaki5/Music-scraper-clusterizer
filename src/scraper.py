@@ -31,6 +31,7 @@ if __name__ == '__main__':
     logging.info("Logger started!")
 
 REQUEST_STATUS_OK = 200
+REQUEST_STATUS_SERVER_BUSY = 429
 
 BASE_URL = "https://www.discogs.com"
 BASE_URL_SEARCH = "https://www.discogs.com/search/"
@@ -42,10 +43,24 @@ PAGE_NUM_ATTR = "page="
 LIMIT_MAX_ATTR = "limit=250"
 
 
+def get_url(url):
+    work_flag = True
+    response = None
+    sleep_time = 5
+    while work_flag:
+        response = requests.get(url)
+        if response.status_code == REQUEST_STATUS_SERVER_BUSY:
+            time.sleep(sleep_time)
+            sleep_time *= 2
+        else:
+            work_flag = False
+    return response
+
+
 # Gets all data for one country, iterating through decades and genre
 def scrape_country(country):
     url = BASE_URL_SEARCH + "?" + COUNTRY_ATTR + country + "&" + FAST_LAYOUT_ATTR
-    response = requests.get(url)
+    response = get_url(url)
     if response.status_code == REQUEST_STATUS_OK:
         album_counter = 0
         # Create html_tree of all page
@@ -69,7 +84,7 @@ def scrape_country(country):
 # Gets all data for one country, for one specific decade
 def scrape_country_decade(country, decade, album_counter):
     url = BASE_URL_SEARCH + "?" + COUNTRY_ATTR + country + "&" + DECADE_ATTR + decade + "&" + FAST_LAYOUT_ATTR
-    response = requests.get(url)
+    response = get_url(url)
     if response.status_code == REQUEST_STATUS_OK:
         # Create html_tree of all page
         html_tree = BeautifulSoup(response.text, "html.parser")
@@ -109,7 +124,7 @@ def scrape_country_decade_genre(country, decade, genre=None, album_counter=0):
                FAST_LAYOUT_ATTR + "&" + PAGE_NUM_ATTR + str(page_num) + "&" + LIMIT_MAX_ATTR)
         if genre:
             url += "&" + GENRE_ATTR + genre
-        response = requests.get(url)
+        response = get_url(url)
         if response.status_code == REQUEST_STATUS_OK:
             # Create html_tree of all page
             html_tree = BeautifulSoup(response.text, "html.parser")
@@ -160,7 +175,7 @@ def scrape_country_decade_genre(country, decade, genre=None, album_counter=0):
 
 def scrape_album(url, country, decade):
     scrape_artist_num = 0
-    response = requests.get(url)
+    response = get_url(url)
     if response.status_code == REQUEST_STATUS_OK:
         # Create html_tree of all page
         html_tree = BeautifulSoup(response.text, "html.parser")
@@ -503,7 +518,7 @@ def scrape_album(url, country, decade):
 
 # Scrape group or person for artist details
 def scrape_artist(url):
-    response = requests.get(url)
+    response = get_url(url)
     if response.status_code == REQUEST_STATUS_OK:
         # Create html_tree of all artist page
         html_tree = BeautifulSoup(response.text, "html.parser")

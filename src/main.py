@@ -31,6 +31,7 @@ while work_flag:
         db.recreate_database()
         logging.info("Database recreated, starting scrape, time: " + str(datetime.datetime.now()))
         scraper.scrape_country("Yugoslavia")
+        scraper.scrape_country("Serbia")
     elif user_input == "2":
         work_flag = False
 

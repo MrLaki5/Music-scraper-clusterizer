@@ -224,6 +224,7 @@ def scrape_album(url, country, decade):
                       + str(formats) + ", year: " + str(year) + "]")
 
         # Get songs of album
+        track_artists = []
         songs = []
         songs_tree = html_tree.find('div', {"id": "tracklist"})
         if songs_tree:
@@ -256,6 +257,19 @@ def scrape_album(url, country, decade):
                             logging.error("scraper:scrape_album: error in calculating duration of song, exception: "
                                           + str(ex) + ", url: " + url)
                             song_duration = None
+                # Track artists
+                artists_tree = item.find_all('td', {'class': 'tracklist_track_artists'})
+                for item_2 in artists_tree:
+                    artist_name_tree = item_2.find('a', href=True)
+                    if not artist_name_tree:
+                        continue
+                    artist_name = artist_name_tree.string
+                    artist_url = artist_name_tree['href']
+                    artist_id = artist_url.split("/")
+                    artist_id = artist_id[len(artist_id) - 1].split("-")
+                    artist_id = artist_id[0]
+                    artist_rate_set.add(artist_id)
+                    track_artists.append([{"name": artist_name, "id": artist_id, "url": artist_url}])
                 # Extra artists
                 artists = []
                 artists_tree = item.find_all('span', {'class': 'tracklist_extra_artist_span'})
@@ -290,6 +304,7 @@ def scrape_album(url, country, decade):
                               "duration": song_duration, "id": song_id, "parts": artists})
 
         logging.debug("Album songs: " + str(songs))
+        logging.debug("Track artists: " + str(track_artists))
 
         # Get versions of same album
         versions = []
@@ -568,8 +583,6 @@ def scrape_artist(url):
 
 
 # scrape_country("Yugoslavia")
-# scrape_album(
-#    'https://www.discogs.com/%D0%91%D0%B0j%D0%B0%D0%B3%D0%B0-%D0%98%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%82%D0%BE%D1%80%D0%B8-%D0%94%D0%B0%D1%99%D0%B8%D0%BD%D0%B0-%D0%94%D0%B8%D0%BC-%D0%9F%D1%80%D0%B0%D1%88%D0%B8%D0%BD%D0%B0/master/712784',
-#    'Yugoslavia', "1980")
+scrape_album( 'https://www.discogs.com/Various-Kafanske-Balade-1/master/1147112', 'Yugoslavia', "1980")
 # scrape_artist('https://www.discogs.com/artist/504779-Mom%C4%8Dilo-Bajagi%C4%87')
 # scrape_artist('https://www.discogs.com/artist/525165-Bajaga-I-Instruktori')

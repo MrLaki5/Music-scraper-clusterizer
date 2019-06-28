@@ -2,6 +2,7 @@ import json
 import sqlalchemy
 from db.Model import metadata
 import os
+import logging
 
 # Get path of db configuration
 config_path = os.path.join(os.path.dirname(__file__), 'db.json')
@@ -44,11 +45,16 @@ def check_if_exists_in_db(query, params):
 def insert_in_db(query, params):
     statement = sqlalchemy.sql.text(query)
     connection = engine.connect()
-    if params:
-        results = connection.execute(statement, params)
-    else:
-        results = connection.execute(statement)
-    if results.rowcount > 0:
+    try:
+        if params:
+            results = connection.execute(statement, params)
+        else:
+            results = connection.execute(statement)
+    except Exception as ex:
+        logging.error("Database insert exception, ex: " + str(ex) +
+                      ", query: " + str(query) + ", params: " + str(params))
+        results = None
+    if results and results.rowcount > 0:
         ret_val = results.fetchone()
         ret_val = ret_val["id"]
     else:

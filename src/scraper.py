@@ -48,8 +48,12 @@ def get_url(url):
     response = None
     sleep_time = 5
     while work_flag:
-        response = requests.get(url)
-        if response.status_code == REQUEST_STATUS_SERVER_BUSY:
+        response = None
+        try:
+            response = requests.get(url)
+        except Exception as ex:
+            logging.error("Connection error on requests.get, exception: " + str(ex))
+        if response is None or response.status_code == REQUEST_STATUS_SERVER_BUSY:
             time.sleep(sleep_time)
             sleep_time *= 2
         else:
@@ -165,6 +169,11 @@ def scrape_country_decade_genre(country, decade, genre=None, album_counter=0):
                     else:
                         logging.error("Country: " + country + ", decade: " + str(decade) +
                                       ", genre: " + str(genre) + ", album not scraped, url: " + BASE_URL + item)
+                else:
+                    album_counter += 1
+                    logging.info("Album already scraped, country: " + country + ", decade: " +
+                                 str(decade) + ", genre: " + str(genre) + ", album number: "
+                                 + str(album_counter) + ", url: " + BASE_URL + item)
         else:
             # If flag is out of bound it means it has finished all pages for current filters
             logging.debug("scraper:scrape_country_decade_genre: finishing scrape response status: " +
@@ -601,6 +610,6 @@ def scrape_artist(url):
 
 
 # scrape_country("Yugoslavia")
-# scrape_album("https://www.discogs.com/composition/release/11052231", 'Yugoslavia', "1980")
+# scrape_album("https://www.discogs.com/Code-Vreme/master/1489032", 'Yugoslavia', "1980")
 # scrape_artist('https://www.discogs.com/artist/504779-Mom%C4%8Dilo-Bajagi%C4%87')
 # scrape_artist('https://www.discogs.com/artist/525165-Bajaga-I-Instruktori')

@@ -583,6 +583,6 @@ def scrape_artist(url):
 
 
 # scrape_country("Yugoslavia")
-scrape_album( 'https://www.discogs.com/Various-Kafanske-Balade-1/master/1147112', 'Yugoslavia', "1980")
+#scrape_album( 'https://www.discogs.com/Various-Kafanske-Balade-1/master/1147112', 'Yugoslavia', "1980")
 # scrape_artist('https://www.discogs.com/artist/504779-Mom%C4%8Dilo-Bajagi%C4%87')
 # scrape_artist('https://www.discogs.com/artist/525165-Bajaga-I-Instruktori')

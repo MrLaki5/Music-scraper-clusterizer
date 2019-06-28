@@ -61,3 +61,12 @@ def insert_in_db(query, params):
         ret_val = None
     connection.close()
     return ret_val
+
+
+# Get albums count ordered by genre
+def get_album_count_by_order():
+    statement = sqlalchemy.sql.text("""SELECT count(*), g.content FROM album_genre as g GROUP BY g.content""")
+    connection = engine.connect()
+    results = connection.execute(statement)
+    connection.close()
+    return results

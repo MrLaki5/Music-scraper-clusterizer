@@ -198,18 +198,20 @@ def scrape_album(url, country, decade):
         album_title_tree = title_tree.find_all("span")
         album_title = album_title_tree[2].text
         album_title = album_title.strip()
+        # Get tree of artist
+        profile_tree = html_tree.find('div', {"class": "profile"})
         # Get album styles
-        style_tree = html_tree.find_all('a', href=re.compile("/style/"))
+        style_tree = profile_tree.find_all('a', href=re.compile("/style/"))
         styles = []
         for item in style_tree:
             styles.append(item.string)
         # Get album genres
-        genre_tree = html_tree.find_all('a', href=re.compile("/genre/"))
+        genre_tree = profile_tree.find_all('a', href=re.compile("/genre/"))
         genres = []
         for item in genre_tree:
             genres.append(item.string)
         # Get album year
-        year_tree = html_tree.find('a', href=re.compile("year"))
+        year_tree = profile_tree.find('a', href=re.compile("year"))
         year = None
         if year_tree:
             year = year_tree.string
@@ -217,7 +219,7 @@ def scrape_album(url, country, decade):
             year = year[len(year) - 1]
             year = int(year)
         # Get album formats
-        format_tree = html_tree.find_all('a', href=re.compile("format_exact"))
+        format_tree = profile_tree.find_all('a', href=re.compile("format_exact"))
         formats = []
         for item in format_tree:
             formats.append(item.string)
@@ -598,6 +600,6 @@ def scrape_artist(url):
 
 
 # scrape_country("Yugoslavia")
-#scrape_album( 'https://www.discogs.com/Various-Kafanske-Balade-1/master/1147112', 'Yugoslavia', "1980")
+# scrape_album("https://www.discogs.com/composition/release/11052231", 'Yugoslavia', "1980")
 # scrape_artist('https://www.discogs.com/artist/504779-Mom%C4%8Dilo-Bajagi%C4%87')
 # scrape_artist('https://www.discogs.com/artist/525165-Bajaga-I-Instruktori')

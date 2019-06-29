@@ -50,7 +50,8 @@ while work_flag:
             print("1. Album count per genre")
             print("2. Album count per style")
             print("3. Album version count, top 20")
-            print("4. Person rating count, top 100")
+            print("4. Person rating, top 100")
+            print("5. Person vocals, top 100")
             print("6. Back")
             print("--------------------------")
             query_num = input("Choose: ")
@@ -71,6 +72,11 @@ while work_flag:
                 time.sleep(0.1)
             elif query_num == "4":
                 results = db.get_person_count_by_rating_top_100()
+                for result in results:
+                    logging.info(str(result))
+                time.sleep(0.1)
+            elif query_num == "5":
+                results = db.get_person_count_by_vocals_top_100()
                 for result in results:
                     logging.info(str(result))
                 time.sleep(0.1)

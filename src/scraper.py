@@ -5,11 +5,7 @@ import re
 import urllib.parse as urlparse
 import db
 import unicodedata as ud
-import threading
 import time
-
-album_count_lock = threading.Lock
-album_count = 0
 
 
 # Functions for checking if string is in cyrillic or latin letters
@@ -43,6 +39,7 @@ PAGE_NUM_ATTR = "page="
 LIMIT_MAX_ATTR = "limit=250"
 
 
+# Function that gets html from url
 def get_url(url):
     work_flag = True
     response = None
@@ -80,7 +77,7 @@ def scrape_country(country):
         logging.debug("Decades: " + str(decades))
         for item in decades:
             album_counter = scrape_country_decade(country, item, album_counter)
-        logging.info("Albums scraped, country: " + country + ", album count: " + str(album_count))
+        logging.info("Albums scraped, country: " + country + ", album count: " + str(album_counter))
     else:
         logging.error("scraper:scrape_country: response status: " + str(response.status_code) + ", on url: " + url)
 

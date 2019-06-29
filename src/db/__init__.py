@@ -175,3 +175,17 @@ def get_person_count_by_category_top_100(type_aos):
     results = connection.execute(statement)
     connection.close()
     return results
+
+
+# Get artist sites
+def get_artist_sites():
+    statement = sqlalchemy.sql.text("""
+    SELECT a.name, 
+    a.is_group, 
+    s.web 
+    FROM artist_web AS s, artist AS a
+    WHERE s.id_artist = a.id""")
+    connection = engine.connect()
+    results = connection.execute(statement)
+    connection.close()
+    return results

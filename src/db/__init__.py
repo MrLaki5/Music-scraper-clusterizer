@@ -177,6 +177,44 @@ def get_person_count_by_category_top_100(type_aos):
     return results
 
 
+# Get song on album count top 100
+def get_song_on_album_count_top_100():
+    statement = sqlalchemy.sql.text("""
+    WITH cte AS (
+        SELECT rank() OVER (ORDER BY COUNT(*) DESC) AS rnk,
+        COUNT(*) AS cnt,
+        (SELECT b.name 
+        FROM song AS b 
+        WHERE soa.id = b.id 
+        LIMIT 1) as name,
+        (SELECT string_agg(DISTINCT gen.content, ', ')
+        FROM album_genre AS gen
+        WHERE gen.id_album = soa.id_album) AS genres,
+        (SELECT string_agg(DISTINCT sty.content, ', ')
+        FROM album_style AS sty
+        WHERE sty.id_album = soa.id_album) AS styles,
+        (SELECT string_agg(DISTINCT form.content, ', ')
+        FROM album_format AS form
+        WHERE form.id_album = soa.id_album) AS formats,
+        (SELECT string_agg(DISTINCT alb.year::TEXT, ', ')
+        FROM album AS alb
+        WHERE alb.id = soa.id_album) AS years,
+        (SELECT string_agg(DISTINCT alb.country, ', ')
+        FROM album AS alb
+        WHERE alb.id = soa.id_album) AS countries 
+        FROM song_on_album AS soa
+            GROUP BY soa.id
+    )
+    SELECT *
+    FROM   cte
+    WHERE  rnk <= 100 
+    """)
+    connection = engine.connect()
+    results = connection.execute(statement)
+    connection.close()
+    return results
+
+
 # Get artist sites
 def get_artist_sites():
     statement = sqlalchemy.sql.text("""

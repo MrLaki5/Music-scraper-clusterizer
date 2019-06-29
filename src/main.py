@@ -55,7 +55,7 @@ while work_flag:
             print("6. Person category 'arranged by' count, top 100")
             print("7. Person category 'lyrics by' count, top 100")
             print("8. Person category 'music by' count, top 100")
-            print("9. ")
+            print("9. Song on album count, top 100")
             print("10. Get artists with their sites")
             print("11. Back")
             print("--------------------------")
@@ -108,7 +108,12 @@ while work_flag:
                 for result in results:
                     logging.info(str(result))
                 time.sleep(0.1)
-
+            elif query_num == "9":
+                results = db.get_song_on_album_count_top_100()
+                logging.info(str(results.keys()))
+                for result in results:
+                    logging.info(str(result))
+                time.sleep(0.1)
             elif query_num == "10":
                 results = db.get_artist_sites()
                 logging.info(str(results.keys()))

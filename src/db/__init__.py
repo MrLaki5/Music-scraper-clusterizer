@@ -65,7 +65,12 @@ def insert_in_db(query, params):
 
 # Get albums count ordered by genre
 def get_album_count_by_order():
-    statement = sqlalchemy.sql.text("""SELECT count(*), g.content as genre FROM album_genre as g GROUP BY g.content""")
+    statement = sqlalchemy.sql.text("""
+    SELECT count(*), 
+    g.content as genre 
+    FROM album_genre as g 
+    GROUP BY g.content
+    """)
     connection = engine.connect()
     results = connection.execute(statement)
     connection.close()
@@ -74,7 +79,12 @@ def get_album_count_by_order():
 
 # Get albums count ordered by style
 def get_album_count_by_style():
-    statement = sqlalchemy.sql.text("""SELECT count(*), s.content as style FROM album_style as s GROUP BY s.content""")
+    statement = sqlalchemy.sql.text("""
+    SELECT count(*), 
+    s.content as style 
+    FROM album_style as s 
+    GROUP BY s.content
+    """)
     connection = engine.connect()
     results = connection.execute(statement)
     connection.close()
@@ -203,7 +213,7 @@ def get_song_on_album_count_top_100():
         FROM album AS alb
         WHERE alb.id = soa.id_album) AS countries 
         FROM song_on_album AS soa
-            GROUP BY soa.id
+        GROUP BY soa.id
     )
     SELECT *
     FROM   cte
@@ -222,7 +232,8 @@ def get_artist_sites():
     a.is_group, 
     s.web 
     FROM artist_web AS s, artist AS a
-    WHERE s.id_artist = a.id""")
+    WHERE s.id_artist = a.id
+    """)
     connection = engine.connect()
     results = connection.execute(statement)
     connection.close()

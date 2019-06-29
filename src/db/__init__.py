@@ -65,7 +65,7 @@ def insert_in_db(query, params):
 
 # Get albums count ordered by genre
 def get_album_count_by_order():
-    statement = sqlalchemy.sql.text("""SELECT count(*), g.content FROM album_genre as g GROUP BY g.content""")
+    statement = sqlalchemy.sql.text("""SELECT count(*), g.content as genre FROM album_genre as g GROUP BY g.content""")
     connection = engine.connect()
     results = connection.execute(statement)
     connection.close()
@@ -74,7 +74,7 @@ def get_album_count_by_order():
 
 # Get albums count ordered by style
 def get_album_count_by_style():
-    statement = sqlalchemy.sql.text("""SELECT count(*), s.content FROM album_style as s GROUP BY s.content""")
+    statement = sqlalchemy.sql.text("""SELECT count(*), s.content as style FROM album_style as s GROUP BY s.content""")
     connection = engine.connect()
     results = connection.execute(statement)
     connection.close()
@@ -142,6 +142,30 @@ def get_person_count_by_vocals_top_100():
         a.name as name
         FROM artist as a 
         WHERE a.is_group = False AND a.vocals IS NOT NULL
+    )
+    SELECT *
+    FROM   cte
+    WHERE  rnk <= 100 
+    """)
+    connection = engine.connect()
+    results = connection.execute(statement)
+    connection.close()
+    return results
+
+
+# Get person count by category top 100
+def get_person_count_by_category_top_100(type_aos):
+    statement = sqlalchemy.sql.text("""
+    WITH cte AS (
+        SELECT rank() OVER (ORDER BY count(*) DESC) AS rnk,
+        count(*) AS cnt,
+        (SELECT b.name 
+        FROM artist AS b 
+        WHERE a.id = b.id 
+        LIMIT 1) as name
+        FROM artist AS a, artist_on_song AS aos
+        WHERE a.is_group = False and a.id = aos.id_artist and aos.type = '""" + type_aos + """'
+        GROUP BY a.id
     )
     SELECT *
     FROM   cte

@@ -52,35 +52,61 @@ while work_flag:
             print("3. Album version count, top 20")
             print("4. Person rating, top 100")
             print("5. Person vocals, top 100")
-            print("6. Back")
+            print("6. Person category 'arranged by' count, top 100")
+            print("7. Person category 'lyrics by' count, top 100")
+            print("8. Person category 'music by' count, top 100")
+            print("12. Back")
             print("--------------------------")
             query_num = input("Choose: ")
             if query_num == "1":
                 results = db.get_album_count_by_order()
+                logging.info(str(results.keys()))
                 for result in results:
                     logging.info(str(result))
                 time.sleep(0.1)
             elif query_num == "2":
                 results = db.get_album_count_by_style()
+                logging.info(str(results.keys()))
                 for result in results:
                     logging.info(str(result))
                 time.sleep(0.1)
             elif query_num == "3":
                 results = db.get_album_count_by_versions_top_20()
+                logging.info(str(results.keys()))
                 for result in results:
                     logging.info(str(result))
                 time.sleep(0.1)
             elif query_num == "4":
                 results = db.get_person_count_by_rating_top_100()
+                logging.info(str(results.keys()))
                 for result in results:
                     logging.info(str(result))
                 time.sleep(0.1)
             elif query_num == "5":
                 results = db.get_person_count_by_vocals_top_100()
+                logging.info(str(results.keys()))
                 for result in results:
                     logging.info(str(result))
                 time.sleep(0.1)
             elif query_num == "6":
+                results = db.get_person_count_by_category_top_100("arranged")
+                logging.info(str(results.keys()))
+                for result in results:
+                    logging.info(str(result))
+                time.sleep(0.1)
+            elif query_num == "7":
+                results = db.get_person_count_by_category_top_100("lyrics")
+                logging.info(str(results.keys()))
+                for result in results:
+                    logging.info(str(result))
+                time.sleep(0.1)
+            elif query_num == "8":
+                results = db.get_person_count_by_category_top_100("music")
+                logging.info(str(results.keys()))
+                for result in results:
+                    logging.info(str(result))
+                time.sleep(0.1)
+            elif query_num == "12":
                 loc_w_flag = False
     elif user_input == "4":
         work_flag = False

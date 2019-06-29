@@ -47,8 +47,10 @@ while work_flag:
         while loc_w_flag:
             print("--------------------------")
             print("Choose query:")
-            print("1. Album count per genres")
-            print("2. Back")
+            print("1. Album count per genre")
+            print("2. Album count per style")
+            print("3. Album version count, top 20")
+            print("6. Back")
             print("--------------------------")
             query_num = input("Choose: ")
             if query_num == "1":
@@ -57,6 +59,16 @@ while work_flag:
                     logging.info(str(result))
                 time.sleep(0.1)
             elif query_num == "2":
+                results = db.get_album_count_by_style()
+                for result in results:
+                    logging.info(str(result))
+                time.sleep(0.1)
+            elif query_num == "3":
+                results = db.get_album_count_by_top_20()
+                for result in results:
+                    logging.info(str(result))
+                time.sleep(0.1)
+            elif query_num == "6":
                 loc_w_flag = False
     elif user_input == "4":
         work_flag = False

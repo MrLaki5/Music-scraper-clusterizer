@@ -70,3 +70,35 @@ def get_album_count_by_order():
     results = connection.execute(statement)
     connection.close()
     return results
+
+
+# Get albums count ordered by style
+def get_album_count_by_style():
+    statement = sqlalchemy.sql.text("""SELECT count(*), s.content FROM album_style as s GROUP BY s.content""")
+    connection = engine.connect()
+    results = connection.execute(statement)
+    connection.close()
+    return results
+
+
+# Get albums count ordered by style
+def get_album_count_by_top_20():
+    statement = sqlalchemy.sql.text("""
+    WITH cte AS (
+        SELECT rank() OVER (ORDER BY count(*) DESC) AS rnk,
+        COUNT(*) as cnt,
+        (SELECT b.name 
+        FROM album as b 
+        WHERE a.id_album_group = b.id_album_group 
+        LIMIT 1) as name
+        FROM album as a  
+        GROUP BY a.id_album_group 
+    )
+    SELECT *
+    FROM   cte
+    WHERE  rnk <= 20 
+    """)
+    connection = engine.connect()
+    results = connection.execute(statement)
+    connection.close()
+    return results

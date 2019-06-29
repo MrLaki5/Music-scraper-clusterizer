@@ -82,7 +82,7 @@ def get_album_count_by_style():
 
 
 # Get albums count ordered by style
-def get_album_count_by_top_20():
+def get_album_count_by_versions_top_20():
     statement = sqlalchemy.sql.text("""
     WITH cte AS (
         SELECT rank() OVER (ORDER BY count(*) DESC) AS rnk,
@@ -97,6 +97,35 @@ def get_album_count_by_top_20():
     SELECT *
     FROM   cte
     WHERE  rnk <= 20 
+    """)
+    connection = engine.connect()
+    results = connection.execute(statement)
+    connection.close()
+    return results
+
+
+# Get albums count ordered by style
+def get_person_count_by_rating_top_100():
+    statement = sqlalchemy.sql.text("""
+    WITH cte AS (
+        WITH inner_cte AS (
+            SELECT a1.rating AS rating, 
+            art1.id AS id
+            FROM album as a1, artist_rating as ar1, artist as art1 
+            WHERE ar1.id_album = a1.id and art1.id = ar1.id_artist and art1.is_group = False and a1 IS NOT NULL
+        )
+        SELECT rank() OVER (ORDER BY AVG(inn.rating) DESC) AS rnk,
+        AVG(inn.rating) AS avg_rating,
+        (SELECT b.name 
+        FROM artist AS b 
+        WHERE inn.id = b.id 
+        LIMIT 1) as name
+        FROM inner_cte inn
+        GROUP BY inn.id
+    )
+    SELECT *
+    FROM   cte
+    WHERE  rnk <= 100 
     """)
     connection = engine.connect()
     results = connection.execute(statement)

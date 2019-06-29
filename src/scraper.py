@@ -406,7 +406,7 @@ def scrape_album(url, country, decade):
         album_id = db.insert_in_db(query, create_params)
         if not album_id:
             logging.error("scraper:scrape_album: album not added to db, album: " + str(create_params))
-            return False
+            return False, scrape_artist_num
         # Add genres to db
         query = """INSERT INTO album_genre(content, id_album) VALUES(:content, :album_id) RETURNING id as id"""
         for item in genres:

@@ -17,5 +17,11 @@ def plot_results_x_string(results, title):
     x = np.array(x_axis)
     y = np.array(y_axis)
     plt.title(title)
+    # plt.gca().set_yticklabels(['{:.0f}%'.format(x*100) for x in plt.gca().get_yticks()])
+    try:
+        int(x[0])
+        plt.xticks(x)
+    except Exception as ex:
+        pass
     plt.bar(x, y)
     plt.show()

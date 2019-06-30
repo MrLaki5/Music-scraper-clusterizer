@@ -269,7 +269,22 @@ def get_album_count_by_decades():
     SELECT count(*) as cnt,
     a.decade as decade
     FROM album as a 
+    WHERE a.decade IS NOT NULL 
     GROUP BY a.decade 
+    """)
+    connection = engine.connect()
+    results = connection.execute(statement)
+    connection.close()
+    return results
+
+
+# Get albums count by is_cyrillic
+def get_album_count_by_is_cyrillic():
+    statement = sqlalchemy.sql.text("""
+    SELECT count(*) as cnt,
+    a.is_cyrillic as is_cyrillic
+    FROM album as a 
+    GROUP BY a.is_cyrillic 
     """)
     connection = engine.connect()
     results = connection.execute(statement)

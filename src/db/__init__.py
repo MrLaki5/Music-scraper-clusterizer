@@ -238,3 +238,40 @@ def get_artist_sites():
     results = connection.execute(statement)
     connection.close()
     return results
+
+
+# QUERIES USED IN PLOTTING #################################
+
+
+# Get albums count by genres top 6
+def get_album_count_by_genres_top_6():
+    statement = sqlalchemy.sql.text("""
+    WITH cte AS (
+        SELECT rank() OVER (ORDER BY count(*) DESC) AS rnk,
+        COUNT(*) as cnt,
+        gen.content as name
+        FROM album_genre as gen 
+        GROUP BY gen.content 
+    )
+    SELECT cnt, name
+    FROM   cte
+    WHERE  rnk <= 20 
+    """)
+    connection = engine.connect()
+    results = connection.execute(statement)
+    connection.close()
+    return results
+
+
+# Get albums count by decades
+def get_album_count_by_decades():
+    statement = sqlalchemy.sql.text("""
+    SELECT count(*) as cnt,
+    a.decade as decade
+    FROM album as a 
+    GROUP BY a.decade 
+    """)
+    connection = engine.connect()
+    results = connection.execute(statement)
+    connection.close()
+    return results

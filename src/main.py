@@ -3,6 +3,7 @@ import logging
 import scraper
 import datetime
 import time
+import plotting_results
 
 # Logger configuration for both console and file
 FILE_LOG = True
@@ -30,7 +31,8 @@ while work_flag:
     print("1. Recreate database")
     print("2. Scrape data")
     print("3. Do queries")
-    print("4. Exit")
+    print("4. Plot data")
+    print("5. Exit")
     print("--------------------------")
     user_input = input("Choose: ")
     if user_input == "1":
@@ -123,6 +125,25 @@ while work_flag:
             elif query_num == "11":
                 loc_w_flag = False
     elif user_input == "4":
+        loc_w_flag = True
+        while loc_w_flag:
+            print("--------------------------")
+            print("Choose query:")
+            print("1. Genres count, top 6")
+            print("2. ")
+            print("3. Album count group by decades")
+            print("4. Back")
+            print("--------------------------")
+            query_num = input("Choose: ")
+            if query_num == "1":
+                results = db.get_album_count_by_genres_top_6()
+                plotting_results.plot_results_x_string(results, "Genres count, top 6")
+            elif query_num == "3":
+                results = db.get_album_count_by_decades()
+                plotting_results.plot_results_x_string(results, "Album count group by decades")
+            elif query_num == "4":
+                loc_w_flag = False
+    elif user_input == "5":
         work_flag = False
 
 

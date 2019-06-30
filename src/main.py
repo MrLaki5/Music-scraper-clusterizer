@@ -128,7 +128,7 @@ while work_flag:
         loc_w_flag = True
         while loc_w_flag:
             print("--------------------------")
-            print("Choose query:")
+            print("Choose plotting:")
             print("1. Genres count, top 6")
             print("2. ")
             print("3. Album count group by decades")
@@ -144,7 +144,8 @@ while work_flag:
                 plotting_results.plot_results_x_string(results, "Album count group by decades")
             elif query_num == "4":
                 results = db.get_album_count_by_is_cyrillic()
-                plotting_results.plot_results_x_string(results, "Album count group by is name written in cyrillic")
+                plotting_results.plot_results_x_string(results,
+                                                       "Album count group by is name written in cyrillic", True)
             elif query_num == "5":
                 loc_w_flag = False
     elif user_input == "5":

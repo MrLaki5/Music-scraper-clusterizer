@@ -328,3 +328,57 @@ def get_song_duration_count():
     results = connection.execute(statement)
     connection.close()
     return results
+
+
+# ML DATA PREPARATION ##############################
+
+
+# Prepare data for k-means
+def prepare_data(input_attr):
+    query_parts = []
+    # Create query
+    if "genre" in input_attr:
+        query_parts.append("""
+        (SELECT string_agg(DISTINCT gen.content, '|')
+        FROM album_genre AS gen
+        WHERE gen.id_album = a.id) AS genres
+        """)
+    if "style" in input_attr:
+        query_parts.append("""
+        (SELECT string_agg(DISTINCT sty.content, '|')
+        FROM album_style AS sty
+        WHERE sty.id_album = a.id) AS styles
+        """)
+    if "year" in input_attr:
+        query_parts.append("""
+        a.year AS year
+        """)
+    if len(query_parts) == 0:
+        return None
+    statement = """ SELECT """
+    statement += query_parts[0]
+    i = 1
+    while i < len(query_parts):
+        statement += ""","""
+        statement += query_parts[i]
+        i += 1
+    statement += """
+    FROM album AS a
+    """
+    if "year" in input_attr:
+        statement += """ 
+        WHERE a.year IS NOT NULL
+        """
+    # Execute query
+    statement = sqlalchemy.sql.text(statement)
+    connection = engine.connect()
+    results = connection.execute(statement)
+    connection.close()
+    # Prepare feature vectors
+    f_vector = []
+    for item in results:
+        print(item)
+    return None
+
+
+prepare_data(["genre", "year", "style"])

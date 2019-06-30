@@ -15,7 +15,11 @@ def plot_results_x_string(results, title, percentage=False):
                 temp_flag = False
             else:
                 x_axis.append(item_2)
+    plot(x_axis, y_axis, title, percentage)
 
+
+# Plot arrays x and y
+def plot(x_axis, y_axis, title, percentage=False):
     x = np.array(x_axis)
     y = np.array(y_axis)
     plt.title(title)

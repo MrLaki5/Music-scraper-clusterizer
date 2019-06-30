@@ -130,15 +130,24 @@ while work_flag:
             print("--------------------------")
             print("Choose plotting:")
             print("1. Genres count, top 6")
-            print("2. ")
+            print("2. Song count, grouped by song length")
             print("3. Album count group by decades")
             print("4. Album count group by is name written in cyrillic")
-            print("5. Back")
+            print("5. Album count grouped by genres number of album")
+            print("6. Back")
             print("--------------------------")
             query_num = input("Choose: ")
             if query_num == "1":
                 results = db.get_album_count_by_genres_top_6()
                 plotting_results.plot_results_x_string(results, "Genres count, top 6")
+            elif query_num == "2":
+                results = db.get_song_duration_count()
+                x_arr = ["<90", "91-180", "181-240", "241-300", "301-360", ">361"]
+                y_arr = []
+                for result in results:
+                    for item in result:
+                        y_arr.append(item)
+                plotting_results.plot(x_arr, y_arr, "Song count, grouped by song length")
             elif query_num == "3":
                 results = db.get_album_count_by_decades()
                 plotting_results.plot_results_x_string(results, "Album count group by decades")
@@ -147,6 +156,14 @@ while work_flag:
                 plotting_results.plot_results_x_string(results,
                                                        "Album count group by is name written in cyrillic", True)
             elif query_num == "5":
+                results = db.get_album_count_grouped_by_number_of_genres()
+                x_arr = ["1 genre", "2 genres", "3 genres", "4 or more genres"]
+                y_arr = []
+                for result in results:
+                    for item in result:
+                        y_arr.append(item)
+                plotting_results.plot(x_arr, y_arr, "Album count grouped by genres number of album", True)
+            elif query_num == "6":
                 loc_w_flag = False
     elif user_input == "5":
         work_flag = False

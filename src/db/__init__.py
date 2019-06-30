@@ -290,3 +290,41 @@ def get_album_count_by_is_cyrillic():
     results = connection.execute(statement)
     connection.close()
     return results
+
+
+# Get album count grouped by genre count
+def get_album_count_grouped_by_number_of_genres():
+    statement = sqlalchemy.sql.text("""
+    WITH cte AS (
+        SELECT count(*) as gen_num
+        FROM album_genre as gen 
+        GROUP BY gen.id_album 
+    )
+    SELECT count(*) FILTER (WHERE ct.gen_num = 1) AS gen_1,
+    count(*) FILTER (WHERE ct.gen_num = 2) AS gen_2,
+    count(*) FILTER (WHERE ct.gen_num = 3) AS gen_3,
+    count(*) FILTER (WHERE ct.gen_num > 3) AS gen_4_or_more
+    FROM cte AS ct
+    """)
+    connection = engine.connect()
+    results = connection.execute(statement)
+    connection.close()
+    return results
+
+
+# Get number of song in specific duration
+def get_song_duration_count():
+    statement = sqlalchemy.sql.text("""
+    SELECT count(*) FILTER (WHERE s.duration <= 90) AS r90,
+    count(*) FILTER (WHERE s.duration > 90 AND s.duration <= 180) AS r91_180,
+    count(*) FILTER (WHERE s.duration > 180 AND s.duration <= 240) AS r181_240,
+    count(*) FILTER (WHERE s.duration > 240 AND s.duration <= 300) AS r241_300,
+    count(*) FILTER (WHERE s.duration > 300 AND s.duration <= 360) AS r301_360,
+    count(*) FILTER (WHERE s.duration > 360) AS r361
+    FROM song AS s
+    WHERE s.duration IS NOT NULL
+    """)
+    connection = engine.connect()
+    results = connection.execute(statement)
+    connection.close()
+    return results

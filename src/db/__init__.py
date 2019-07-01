@@ -341,20 +341,20 @@ def prepare_data(input_attr):
         query_parts.append("""
         (SELECT string_agg(DISTINCT gen.content, '|')
         FROM album_genre AS gen
-        WHERE gen.id_album = a.id) AS genres
+        WHERE gen.id_album = a.id) AS genre
         """)
     if "style" in input_attr:
         query_parts.append("""
         (SELECT string_agg(DISTINCT sty.content, '|')
         FROM album_style AS sty
-        WHERE sty.id_album = a.id) AS styles
+        WHERE sty.id_album = a.id) AS style
         """)
     if "year" in input_attr:
         query_parts.append("""
         a.year AS year
         """)
     if len(query_parts) == 0:
-        return None
+        return None, None
     statement = """ SELECT """
     statement += query_parts[0]
     i = 1
@@ -374,11 +374,57 @@ def prepare_data(input_attr):
     connection = engine.connect()
     results = connection.execute(statement)
     connection.close()
+    result_positions = results.keys()
+    results = [r for r in results]
     # Prepare feature vectors
-    f_vector = []
+    style_set = set()
+    genre_set = set()
+    # Get all binary feature depending on all types of genres and styles.
+    # Hot encoding not done, because it doesn't work well with k-means
+    if "genre" in result_positions or "style" in result_positions:
+        for item in results:
+            if "genre" in result_positions:
+                curr_genres = item[result_positions.index("genre")]
+                if curr_genres:
+                    curr_genres = curr_genres.split("|")
+                    for c_g in curr_genres:
+                        genre_set.add(c_g)
+            if "style" in result_positions:
+                curr_styles = item[result_positions.index("style")]
+                if curr_styles:
+                    curr_styles = curr_styles.split("|")
+                    for c_s in curr_styles:
+                        style_set.add(c_s)
+    style_set = list(style_set)
+    genre_set = list(genre_set)
+    # Build feature vectors
+    feature_vectors = []
     for item in results:
-        print(item)
-    return None
+        curr_vec = []
+        if "genre" in result_positions:
+            gen_vec = [0 for i in genre_set]
+            curr_genres = item[result_positions.index("genre")]
+            if curr_genres:
+                curr_genres = curr_genres.split("|")
+                for c_g in curr_genres:
+                    gen_vec[genre_set.index(c_g)] = 1
+            curr_vec += gen_vec
+        if "style" in result_positions:
+            st_vec = [0 for i in style_set]
+            curr_styles = item[result_positions.index("style")]
+            if curr_styles:
+                curr_styles = curr_styles.split("|")
+                for c_s in curr_styles:
+                    st_vec[style_set.index(c_s)] = 1
+            curr_vec += st_vec
+        if "year" in result_positions:
+            curr_year = item[result_positions.index("year")]
+            if not curr_year:
+                curr_year = 0
+            curr_vec.append(curr_year)
+        feature_vectors.append(curr_vec)
+    print(str(feature_vectors))
+    return feature_vectors, results
 
 
 prepare_data(["genre", "year", "style"])

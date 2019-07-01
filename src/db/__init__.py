@@ -255,7 +255,7 @@ def get_album_count_by_genres_top_6():
     )
     SELECT cnt, name
     FROM   cte
-    WHERE  rnk <= 20 
+    WHERE  rnk <= 6
     """)
     connection = engine.connect()
     results = connection.execute(statement)

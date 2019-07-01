@@ -220,6 +220,7 @@ while work_flag:
         logging.info("Calculating vectors")
         f_vectors, results = db.prepare_data(input_arguments)
         if f_vectors and results:
+            logging.info("Calculating clusters")
             clusters = ml.k_means_calculate(k_num, f_vectors)
             if clusters:
                 for res, clu in zip(results, clusters):

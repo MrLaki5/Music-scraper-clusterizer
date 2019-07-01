@@ -424,6 +424,3 @@ def prepare_data(input_attr):
             curr_vec.append(curr_year)
         feature_vectors.append(curr_vec)
     return feature_vectors, results
-
-
-prepare_data(["genre", "year", "style"])

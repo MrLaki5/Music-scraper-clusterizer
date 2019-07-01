@@ -223,7 +223,7 @@ while work_flag:
             clusters = ml.k_means_calculate(k_num, f_vectors)
             if clusters:
                 for res, clu in zip(results, clusters):
-                    logging.info("Data: " + str(res) + ", cluster: " + str(clu))
+                    logging.info("Data: " + str(res) + "    |   cluster: " + str(clu))
             else:
                 logging.info("Clusters not calculated!")
         else:

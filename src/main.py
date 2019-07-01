@@ -4,6 +4,7 @@ import scraper
 import datetime
 import time
 import plotting_results
+import ml
 
 # Logger configuration for both console and file
 FILE_LOG = True
@@ -32,7 +33,8 @@ while work_flag:
     print("2. Scrape data")
     print("3. Do queries")
     print("4. Plot data")
-    print("5. Exit")
+    print("5. K-means clustering")
+    print("6. Exit")
     print("--------------------------")
     user_input = input("Choose: ")
     if user_input == "1":
@@ -166,4 +168,65 @@ while work_flag:
             elif query_num == "6":
                 loc_w_flag = False
     elif user_input == "5":
+        k_flag = True
+        k_num = 0
+        while k_flag:
+            print("--------------------------")
+            print("Set k:")
+            print("c: Cancel")
+            print("--------------------------")
+            k_num = input("Choose: ")
+            try:
+                if k_num == "c":
+                    k_num = -1
+                    k_flag = False
+                    continue
+                k_num = int(k_num)
+                if k_num > 0:
+                    k_flag = False
+            except Exception as ex:
+                pass
+        if k_num < 0:
+            continue
+        input_arguments = set()
+        in_flag = True
+        while in_flag:
+            print("--------------------------")
+            print("Choose inputs:")
+            print("1. Styles")
+            print("2. Genres")
+            print("3. Years")
+            print("4. Finish")
+            print("5. Cancel")
+            print("Currently chosen: " + str(input_arguments))
+            print("--------------------------")
+            in_num = input("Choose: ")
+            if in_num == "1":
+                input_arguments.add("style")
+            elif in_num == "2":
+                input_arguments.add("genre")
+            elif in_num == "3":
+                input_arguments.add("year")
+            elif in_num == "4":
+                in_flag = False
+            elif in_num == "5":
+                break
+        if in_flag:
+            continue
+        input_arguments = list(input_arguments)
+        if len(input_arguments) < 1:
+            logging.info("There must be some inputs")
+            continue
+        logging.info("Calculating vectors")
+        f_vectors, results = db.prepare_data(input_arguments)
+        if f_vectors and results:
+            clusters = ml.k_means_calculate(k_num, f_vectors)
+            if clusters:
+                for res, clu in zip(results, clusters):
+                    logging.info("Data: " + str(res) + ", cluster: " + str(clu))
+            else:
+                logging.info("Clusters not calculated!")
+        else:
+            logging.info("Vectors not calculated!")
+    elif user_input == "6":
         work_flag = False

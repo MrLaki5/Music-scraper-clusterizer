@@ -423,7 +423,6 @@ def prepare_data(input_attr):
                 curr_year = 0
             curr_vec.append(curr_year)
         feature_vectors.append(curr_vec)
-    print(str(feature_vectors))
     return feature_vectors, results
 
 

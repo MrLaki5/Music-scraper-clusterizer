@@ -34,7 +34,8 @@ while work_flag:
     print("3. Do queries")
     print("4. Plot data")
     print("5. K-means clustering")
-    print("6. Exit")
+    print("6. Ward hierarchical clustering")
+    print("7. Exit")
     print("--------------------------")
     user_input = input("Choose: ")
     if user_input == "1":
@@ -172,7 +173,7 @@ while work_flag:
         k_num = 0
         while k_flag:
             print("--------------------------")
-            print("Set k:")
+            print("Set number of clusters:")
             print("c: Cancel")
             print("--------------------------")
             k_num = input("Choose: ")
@@ -229,5 +230,69 @@ while work_flag:
                 logging.info("Clusters not calculated!")
         else:
             logging.info("Vectors not calculated!")
+        time.sleep(0.1)
     elif user_input == "6":
+        k_flag = True
+        k_num = 0
+        while k_flag:
+            print("--------------------------")
+            print("Set number of clusters:")
+            print("c: Cancel")
+            print("--------------------------")
+            k_num = input("Choose: ")
+            try:
+                if k_num == "c":
+                    k_num = -1
+                    k_flag = False
+                    continue
+                k_num = int(k_num)
+                if k_num > 0:
+                    k_flag = False
+            except Exception as ex:
+                pass
+        if k_num < 0:
+            continue
+        input_arguments = set()
+        in_flag = True
+        while in_flag:
+            print("--------------------------")
+            print("Choose inputs:")
+            print("1. Styles")
+            print("2. Genres")
+            print("3. Years")
+            print("4. Finish")
+            print("5. Cancel")
+            print("Currently chosen: " + str(input_arguments))
+            print("--------------------------")
+            in_num = input("Choose: ")
+            if in_num == "1":
+                input_arguments.add("style")
+            elif in_num == "2":
+                input_arguments.add("genre")
+            elif in_num == "3":
+                input_arguments.add("year")
+            elif in_num == "4":
+                in_flag = False
+            elif in_num == "5":
+                break
+        if in_flag:
+            continue
+        input_arguments = list(input_arguments)
+        if len(input_arguments) < 1:
+            logging.info("There must be some inputs")
+            continue
+        logging.info("Calculating vectors")
+        f_vectors, results = db.prepare_data(input_arguments)
+        if f_vectors and results:
+            logging.info("Calculating clusters")
+            clusters = ml.ward_hierarchical_calculate(k_num, f_vectors)
+            if clusters:
+                for res, clu in zip(results, clusters):
+                    logging.info("Data: " + str(res) + "    |   cluster: " + str(clu))
+            else:
+                logging.info("Clusters not calculated!")
+        else:
+            logging.info("Vectors not calculated!")
+        time.sleep(0.1)
+    elif user_input == "7":
         work_flag = False

@@ -1,4 +1,4 @@
-## Music-clusterizer:
+## Music-scraper-clusterizer:
 
 ### Description:
 * Project done for faculty course [hidden knowledge](http://rti.etf.bg.ac.rs/rti/ms1psz/). 

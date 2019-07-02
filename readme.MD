@@ -26,4 +26,17 @@
 * Songs scraped: 435107
 
 #### Plotting:
+* Genres count, top 6:
+<img src="result_plots/Figure_1.png" width="400"/>
 
+* Song count, grouped by song length:
+<img src="result_plots/Figure_2.png" width="400"/>
+
+* Album count, grouped by decades:
+<img src="result_plots/Figure_3.png" width="400"/>
+
+* Album count, grouped by is name written in cyrillic:
+<img src="result_plots/Figure_4.png" width="400"/>
+
+* Album count, grouped by genres number of album:
+<img src="result_plots/Figure_5.png" width="400"/>
